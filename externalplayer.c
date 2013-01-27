@@ -12,7 +12,6 @@
 #include <getopt.h>
 
 #include "externalplayer.h"
-#include "externalplayer-i18n.h"
 #include "externalplayer-player.h"
 #include "externalplayer-control.h"
 #include "externalplayer-remotes.h"
@@ -63,8 +62,6 @@ bool cPluginExternalplayer::Initialize() {
 }
 
 bool cPluginExternalplayer::Start() {
-  RegisterI18n(ExternalplayerPhrases);
-
   if (configFilename == "") {
     configFilename += ConfigDirectory();
     configFilename += "/externalplayer.conf";

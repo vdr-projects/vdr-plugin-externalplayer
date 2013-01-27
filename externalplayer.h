@@ -19,7 +19,7 @@
 using namespace std;
 
 static const char *VERSION        = "0.1.0";
-static const char *DESCRIPTION    = "launch external players";
+static const char *DESCRIPTION    = tr("launch external players");
 
 class cPluginExternalplayer : public cPlugin {
 private:

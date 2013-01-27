@@ -11,72 +11,108 @@ PLUGIN = externalplayer
 
 ### The version number of this plugin (taken from the main source file):
 
-VERSION = $(shell grep 'static const char \*VERSION *=' externalplayer.h | awk '{ print $$6 }' | sed -e 's/[";]//g')
-
-### The C++ compiler and options:
-
-CXX      ?= g++
-CXXFLAGS ?= -O2 -Wall -Woverloaded-virtual
+VERSION = $(shell grep 'static const char \*VERSION *=' $(PLUGIN).h | awk '{ print $$6 }' | sed -e 's/[";]//g')
 
 ### The directory environment:
 
-DVBDIR = ../../../../DVB
-VDRDIR = ../../..
-LIBDIR = ../../lib
-TMPDIR = /tmp
+# Use package data if installed...otherwise assume we're under the VDR source directory:
+PKGCFG = $(if $(VDRDIR),$(shell pkg-config --variable=$(1) $(VDRDIR)/vdr.pc),$(shell pkg-config --variable=$(1) vdr || pkg-config --variable=$(1) ../../../vdr.pc))
+LIBDIR = $(call PKGCFG,libdir)
+LOCDIR = $(call PKGCFG,locdir)
+PLGCFG = $(call PKGCFG,plgcfg)
+#
+TMPDIR ?= /tmp
 
-### Allow user defined options to overwrite defaults:
+### The compiler options:
 
--include $(VDRDIR)/Make.config
+export CFLAGS   = $(call PKGCFG,cflags)
+export CXXFLAGS = $(call PKGCFG,cxxflags)
 
-### The version number of VDR (taken from VDR's "config.h"):
+### The version number of VDR's plugin API (taken from VDR's "config.h"):
 
-VDRVERSION = $(shell grep 'define VDRVERSION ' $(VDRDIR)/config.h | awk '{ print $$3 }' | sed -e 's/"//g')
+APIVERSION = $(call PKGCFG,apiversion)
 
 ### The name of the distribution archive:
 
 ARCHIVE = $(PLUGIN)-$(VERSION)
 PACKAGE = vdr-$(ARCHIVE)
 
-### Includes and Defines (add further entries here):
+### The name of the shared object file:
 
-INCLUDES += -I$(VDRDIR)/include -I$(DVBDIR)/include
+SOFILE = libvdr-$(PLUGIN).so
 
-DEFINES += -D_GNU_SOURCE -DPLUGIN_NAME_I18N='"$(PLUGIN)"'
+ ### Includes and Defines (add further entries here):
+ 
+INCLUDES +=
+DEFINES += -DPLUGIN_NAME_I18N='"$(PLUGIN)"'
 
 ### The object files (add further files here):
 
-OBJS = externalplayer.o externalplayer-config.o externalplayer-control.o  externalplayer-i18n.o externalplayer-player.o externalplayer-remotes.o
+OBJS = externalplayer.o externalplayer-config.o externalplayer-control.o externalplayer-player.o externalplayer-remotes.o
+
+### The main target:
+
+all: $(SOFILE) i18n
 
 ### Implicit rules:
 
 %.o: %.c
-	$(CXX) $(CXXFLAGS) -c $(DEFINES) $(INCLUDES) $<
-
-# Dependencies:
+	$(CXX) $(CXXFLAGS) $(CEXTRA) -c $(DEFINES) $(INCLUDES) $<
+	
+### Dependencies:
 
 MAKEDEP = $(CXX) -MM -MG
 DEPFILE = .dependencies
 $(DEPFILE): Makefile
-	@$(MAKEDEP) $(DEFINES) $(INCLUDES) $(OBJS:%.o=%.c) > $@
+	@$(MAKEDEP) $(DEFINES) $(INCLUDES) $(OBJS:%.o=%.c) *.h > $@
 
 -include $(DEPFILE)
 
+### Internationalization (I18N):
+
+PODIR     = po
+I18Npo    = $(wildcard $(PODIR)/*.po)
+I18Nmo    = $(addsuffix .mo, $(foreach file, $(I18Npo), $(basename $(file))))
+I18Nmsgs  = $(addprefix $(LOCDIR)/, $(addsuffix /LC_MESSAGES/vdr-$(PLUGIN).mo, $(notdir $(foreach file, $(I18Npo), $(basename $(file))))))
+I18Npot   = $(PODIR)/$(PLUGIN).pot
+
+%.mo: %.po
+	msgfmt -v -c -o $@ $<
+
+$(I18Npot): $(wildcard *.cc *.h)
+	xgettext -C -cTRANSLATORS --no-wrap --no-location -k -ktr -ktrNOOP --package-name=vdr-$(PLUGIN) --package-version=$(VERSION) --msgid-bugs-address='<see README>' -o $@ `ls $^`
+
+%.po: $(I18Npot)
+	msgmerge -U --no-wrap --no-location --backup=none -q -N $@ $<
+	@touch $@
+
+$(I18Nmsgs): $(LOCDIR)/%/LC_MESSAGES/vdr-$(PLUGIN).mo: $(PODIR)/%.mo
+	install -D -m644 $< $@
+
+.PHONY: i18n
+i18n: $(I18Nmo) $(I18Npot)
+
+install-i18n: $(I18Nmsgs)
+
 ### Targets:
 
-all: libvdr-$(PLUGIN).so
+$(SOFILE): $(OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -shared $(OBJS) $(LIBS) -o $@
+	@cp --remove-destination $@ $(LIBDIR)/$@.$(APIVERSION)
 
-libvdr-$(PLUGIN).so: $(OBJS)
-	$(CXX) $(CXXFLAGS) -shared $(OBJS) -o $@
-	@cp $@ $(LIBDIR)/$@.$(VDRVERSION)
+install-lib: $(SOFILE)
+	install -D $^ $(LIBDIR)/$^.$(APIVERSION)
+
+install: install-lib install-i18n
 
 dist: clean
 	@-rm -rf $(TMPDIR)/$(ARCHIVE)
 	@mkdir $(TMPDIR)/$(ARCHIVE)
 	@cp -a * $(TMPDIR)/$(ARCHIVE)
-	@tar czf $(PACKAGE).tar.gz -C $(TMPDIR) $(ARCHIVE)
+	@tar czf $(PACKAGE).tgz -C $(TMPDIR) $(ARCHIVE)
 	@-rm -rf $(TMPDIR)/$(ARCHIVE)
-	@echo Distribution package created as $(PACKAGE).tar.gz
+	@echo Distribution package created as $(PACKAGE).tgz
 
 clean:
+	@-rm -f $(PODIR)/*.mo $(PODIR)/*.pot
 	@-rm -f $(OBJS) $(DEPFILE) *.so *.tgz core* *~
