@@ -19,6 +19,7 @@ VERSION = $(shell grep 'static const char \*VERSION *=' $(PLUGIN).h | awk '{ pri
 PKGCFG = $(if $(VDRDIR),$(shell pkg-config --variable=$(1) $(VDRDIR)/vdr.pc),$(shell pkg-config --variable=$(1) vdr || pkg-config --variable=$(1) ../../../vdr.pc))
 LIBDIR = $(call PKGCFG,libdir)
 LOCDIR = $(call PKGCFG,locdir)
+CFGDIR = $(call PKGCFG,configdir)/plugins/$(PLUGIN)
 PLGCFG = $(call PKGCFG,plgcfg)
 #
 TMPDIR ?= /tmp
@@ -73,20 +74,20 @@ $(DEPFILE): Makefile
 PODIR     = po
 I18Npo    = $(wildcard $(PODIR)/*.po)
 I18Nmo    = $(addsuffix .mo, $(foreach file, $(I18Npo), $(basename $(file))))
-I18Nmsgs  = $(addprefix $(LOCDIR)/, $(addsuffix /LC_MESSAGES/vdr-$(PLUGIN).mo, $(notdir $(foreach file, $(I18Npo), $(basename $(file))))))
+I18Nmsgs  = $(addprefix $(DESTDIR)$(LOCDIR)/, $(addsuffix /LC_MESSAGES/vdr-$(PLUGIN).mo, $(notdir $(foreach file, $(I18Npo), $(basename $(file))))))
 I18Npot   = $(PODIR)/$(PLUGIN).pot
 
 %.mo: %.po
-	msgfmt -v -c -o $@ $<
+	msgfmt -c -o $@ $<
 
-$(I18Npot): $(wildcard *.c *.h)
+$(I18Npot): $(wildcard *.c)
 	xgettext -C -cTRANSLATORS --no-wrap --no-location -k -ktr -ktrNOOP --package-name=vdr-$(PLUGIN) --package-version=$(VERSION) --msgid-bugs-address='<see README>' -o $@ `ls $^`
 
 %.po: $(I18Npot)
 	msgmerge -U --no-wrap --no-location --backup=none -q -N $@ $<
 	@touch $@
 
-$(I18Nmsgs): $(LOCDIR)/%/LC_MESSAGES/vdr-$(PLUGIN).mo: $(PODIR)/%.mo
+$(I18Nmsgs): $(DESTDIR)$(LOCDIR)/%/LC_MESSAGES/vdr-$(PLUGIN).mo: $(PODIR)/%.mo
 	install -D -m644 $< $@
 
 .PHONY: i18n
@@ -98,12 +99,14 @@ install-i18n: $(I18Nmsgs)
 
 $(SOFILE): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -shared $(OBJS) $(LIBS) -o $@
-	@cp --remove-destination $@ $(LIBDIR)/$@.$(APIVERSION)
 
 install-lib: $(SOFILE)
-	install -D $^ $(LIBDIR)/$^.$(APIVERSION)
+	install -D $^ $(DESTDIR)$(LIBDIR)/$^.$(APIVERSION)
 
-install: install-lib install-i18n
+install-conf:
+	install -D examples/externalplayer.conf $(DESTDIR)$(CFGDIR)/externalplayer.conf
+
+install: install-lib install-i18n install-conf
 
 dist: clean
 	@-rm -rf $(TMPDIR)/$(ARCHIVE)
