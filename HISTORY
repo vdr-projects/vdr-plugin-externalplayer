@@ -22,7 +22,11 @@ VDR Plugin 'externalplayer' Revision History
 - Added slave mode.
 - Added i18n support.
 
-2013-01:27: Version 0.2.0
+2013-01-27: Version 0.2.0
 
 - Moved old i18n support to new system
 - Adjust Makefile to new makefile system of VDR 1.7.35
+
+2013-02-03: Version 0.2.x
+
+- Incorporate Makefilefix from Copperhead for VDR 1.7.36 
