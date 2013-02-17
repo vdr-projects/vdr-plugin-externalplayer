@@ -1,9 +1,13 @@
 /*
  * externalplayer-remotes.h: A plugin for the Video Disk Recorder
  *
- * See the README file for copyright information and how to reach the author.
+ * Initially written by Felix Hädicke
  *
- * $Id$
+ * 2013 Ulrich Eckhardt <uli-vdr@uli-eckhardt.de>
+ *
+ * This code is distributed under the terms and conditions of the
+ * GNU GENERAL PUBLIC LICENSE. See the file COPYING for details.
+ *
  */
 
 #ifndef _EXTERNALPLAYER_REMOTES_H_
@@ -16,17 +20,17 @@ using namespace std;
 
 class cRemotesDisable {
 private:
-  bool deactivated;
+    bool deactivated;
 public:
-  void deactivateRemotes();
-  void reactivateRemotes();
+    void DeactivateRemotes(void);
+    void ReactivateRemotes(void);
 };
 
-class cRemotesDisableHelper : public cRemote, public cThread {
+class cRemotesDisableHelper: public cRemote, public cThread {
 public:
-  cRemotesDisableHelper(const char * name);
-  void deactivate();
-  void reactivate();
+    cRemotesDisableHelper(const char * name);
+    void Deactivate(void);
+    void Reactivate(void);
 };
 
 #endif /*_EXTERNALPLAYER_REMOTES_H_*/

@@ -1,9 +1,13 @@
 /*
  * externalplayer.h: A plugin for the Video Disk Recorder
  *
- * See the README file for copyright information and how to reach the author.
+* Initially written by Felix Hädicke
  *
- * $Id$
+ * 2012 Ulrich Eckhardt <uli-vdr@uli-eckhardt.de>
+ *
+ * This code is distributed under the terms and conditions of the
+ * GNU GENERAL PUBLIC LICENSE. See the file COPYING for details.
+ *
  */
 
 #ifndef _EXTERNALPLAYER_H_
@@ -41,7 +45,7 @@ public:
   virtual cMenuSetupPage * SetupMenu();
   virtual bool SetupParse(const char * Name, const char * Value);
   virtual bool Service(const char * Id, void * Data = NULL);
-  static void startPlayer(sPlayerArgs * config);
+  static void StartPlayer(sPlayerArgs * config);
 };
 
 class cOsdExternalplayer : public cOsdMenu {

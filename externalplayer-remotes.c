@@ -1,24 +1,28 @@
 /*
  * externalplayer-remotes.c: A plugin for the Video Disk Recorder
  *
- * See the README file for copyright information and how to reach the author.
+ * Initially written by Felix Hädicke
  *
- * $Id$
+ * 2013 Ulrich Eckhardt <uli-vdr@uli-eckhardt.de>
+ *
+ * This code is distributed under the terms and conditions of the
+ * GNU GENERAL PUBLIC LICENSE. See the file COPYING for details.
+ *
  */
 
 #include <string.h>
 
 #include "externalplayer-remotes.h"
 
-void cRemotesDisable::deactivateRemotes() {
+void cRemotesDisable::DeactivateRemotes() {
   if (!deactivated) {
     isyslog("externalplayer-plugin: deactivating remotes");
     for (cRemote * i = Remotes.First(); i != NULL; i = Remotes.Next(i)) {
       if (strcmp(i->Name(), "LIRC") == 0) {
-        ((cRemotesDisableHelper *) i)->deactivate();
+        ((cRemotesDisableHelper *) i)->Deactivate();
       }
       else if (strcmp(i->Name(), "RCU") == 0) {
-        ((cRemotesDisableHelper *) i)->deactivate();
+        ((cRemotesDisableHelper *) i)->Deactivate();
       }
     }
   }
@@ -26,15 +30,15 @@ void cRemotesDisable::deactivateRemotes() {
   deactivated = true;
 }
 
-void cRemotesDisable::reactivateRemotes() {
+void cRemotesDisable::ReactivateRemotes() {
   if (deactivated) {
     isyslog("externalplayer-plugin: reactivating remotes");
     for (cRemote * i = Remotes.First(); i != NULL; i = Remotes.Next(i)) {
       if (strcmp(i->Name(), "LIRC") == 0) {
-        ((cRemotesDisableHelper *) i)->reactivate();
+        ((cRemotesDisableHelper *) i)->Reactivate();
       }
       else if (strcmp(i->Name(), "RCU") == 0) {
-        ((cRemotesDisableHelper *) i)->reactivate();
+        ((cRemotesDisableHelper *) i)->Reactivate();
       }
     }
   }
@@ -47,13 +51,13 @@ void cRemotesDisable::reactivateRemotes() {
 cRemotesDisableHelper::cRemotesDisableHelper(const char * name) : cRemote(name) {
 }
 
-void cRemotesDisableHelper::deactivate() {
+void cRemotesDisableHelper::Deactivate() {
   if (Active()) {
     Cancel();
   }
 }
 
-void cRemotesDisableHelper::reactivate() {
+void cRemotesDisableHelper::Reactivate() {
   if (!Active()) {
     Start();
   }

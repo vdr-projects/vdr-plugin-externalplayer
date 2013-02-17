@@ -1,9 +1,12 @@
 /*
  * externalplayer-config.c: A plugin for the Video Disk Recorder
  *
- * See the README file for copyright information and how to reach the author.
+  * Initially written by Felix Hädicke
  *
- * $Id$
+ * 2013 Ulrich Eckhardt <uli-vdr@uli-eckhardt.de>
+ *
+ * This code is distributed under the terms and conditions of the
+ * GNU GENERAL PUBLIC LICENSE. See the file COPYING for details.
  */
 
 #include "externalplayer-config.h"
@@ -51,6 +54,8 @@ sKeymap::sKeymap() {
   vdrKeyUser7 = NULL;
   vdrKeyUser8 = NULL;
   vdrKeyUser9 = NULL;
+  vdrKeyChannelUp = NULL;
+  vdrKeyChannelDown = NULL;
 }
 
 sKeymap::~sKeymap() {
@@ -96,6 +101,8 @@ sKeymap::~sKeymap() {
   delete vdrKeyUser7;
   delete vdrKeyUser8;
   delete vdrKeyUser9;
+  delete vdrKeyChannelUp;
+  delete vdrKeyChannelDown;
 }
 
 // --- sPlayerArgs ----------------------------------------------------------
@@ -125,7 +132,7 @@ SyntaxErrorException::SyntaxErrorException(int nCharNumber, string * nConfigFile
   configFileContent = nConfigFileContent;
 }
 
-int SyntaxErrorException::getLineNumber() {
+int SyntaxErrorException::GetLineNumber() {
   int lineNumber = 0;
   for (int i = 0; i < charNumber; i++) {
     if ((*configFileContent)[i] == '\n') {
@@ -135,7 +142,7 @@ int SyntaxErrorException::getLineNumber() {
   return lineNumber;
 }
 
-int SyntaxErrorException::getColumnNumber() {
+int SyntaxErrorException::GetColumnNumber() {
   int columnNumber = 1;
   for (int i = 0; i < charNumber; i++) {
     if ((*configFileContent)[i] == '\n') {
@@ -157,7 +164,7 @@ EntryMissingException::EntryMissingException(string nPlayerCommand, string nMenu
   configFileContent = nConfigFileContent;
 }
 
-int EntryMissingException::getLineNumber() {
+int EntryMissingException::GetLineNumber() {
   int lineNumber = 0;
   for (int i = 0; i < charNumber; i++) {
     if ((*configFileContent)[i] == '\n') {
@@ -175,7 +182,7 @@ InvalidKeywordException::InvalidKeywordException(string nKeyword, int nCharNumbe
   configFileContent = nConfigFileContent;
 }
 
-int InvalidKeywordException::getLineNumber() {
+int InvalidKeywordException::GetLineNumber() {
   int lineNumber = 0;
   for (int i = 0; i < charNumber; i++) {
     if ((*configFileContent)[i] == '\n') {
@@ -189,12 +196,12 @@ int InvalidKeywordException::getLineNumber() {
 
 cExternalplayerConfig::cExternalplayerConfig(string filename) {
   try {
-    configFileContent = readConfigFile(filename);
-    configuration = parseConfigFile();
+    configFileContent = ReadConfigFile(filename);
+    configuration = ParseConfigFile();
   }
-  catch (FileNotFoundException fnfEx) {
+  catch (FileNotFoundException &fnfEx) {
     configFileContent = NULL;
-    isyslog("externalplayer-plugin: Configuration file \"%s\" not found!\n", fnfEx.getFilename().c_str());
+    isyslog("externalplayer-plugin: Configuration file \"%s\" not found!\n", fnfEx.GetFilename().c_str());
   }
 }
 
@@ -206,7 +213,7 @@ cExternalplayerConfig::~cExternalplayerConfig() {
   }
 }
 
-string * cExternalplayerConfig::readConfigFile(string filename) {
+string * cExternalplayerConfig::ReadConfigFile(string filename) {
   ifstream playerConfigStream;
   playerConfigStream.open(filename.c_str(), ios::in);
 
@@ -229,7 +236,7 @@ string * cExternalplayerConfig::readConfigFile(string filename) {
   return configFileContent;
 }
 
-list<sPlayerArgs *> cExternalplayerConfig::parseConfigFile() {
+list<sPlayerArgs *> cExternalplayerConfig::ParseConfigFile() {
   list<sPlayerArgs *> configuration;
   sPlayerArgs * playerConfig = NULL;
 
@@ -247,17 +254,17 @@ list<sPlayerArgs *> cExternalplayerConfig::parseConfigFile() {
         playerConfig = new sPlayerArgs();
         i++;
         try {
-          playerConfig = getConfiguration(&i);
+          playerConfig = GetConfiguration(&i);
           configuration.push_back(playerConfig);
         }
-        catch (EntryMissingException emEx) {
-          if (emEx.getMenuEntry() == "") {
+        catch (EntryMissingException &emEx) {
+          if (emEx.GetMenuEntry() == "") {
             isyslog("externalplayer-plugin: error in config file: \"MenuEntry\" missing or invalid, line %i",
-                    emEx.getLineNumber());
+                    emEx.GetLineNumber());
           }
-          if (emEx.getPlayerCommand() == "") {
+          if (emEx.GetPlayerCommand() == "") {
             isyslog("externalplayer-plugin: error in config file: \"Command\" missing or invalid, line %i!\n",
-                    emEx.getLineNumber());
+                    emEx.GetLineNumber());
           }
         }
         break;
@@ -268,14 +275,15 @@ list<sPlayerArgs *> cExternalplayerConfig::parseConfigFile() {
         }
         i++;
         isyslog("externalplayer-plugin: syntax error in config file: line %i, column %i! Ignoring rest of this line.",
-                getLineNumberOfChar(errorPosition), getColumnNumberOfChar(errorPosition));
+                GetLineNumberOfChar(errorPosition), GetColumnNumberOfChar(errorPosition));
+        break;
     }
   }
 
   return configuration;
 }
 
-sPlayerArgs * cExternalplayerConfig::getConfiguration(unsigned int * position) {
+sPlayerArgs * cExternalplayerConfig::GetConfiguration(unsigned int * position) {
   sPlayerArgs * args = new sPlayerArgs();
 
   bool endOfFile = false;
@@ -298,18 +306,19 @@ sPlayerArgs * cExternalplayerConfig::getConfiguration(unsigned int * position) {
         }
         else {
           try {
-            sConfigEntry entry = getConfigEntry(position);
-            processConfigEntry(args, entry, *position);
+            sConfigEntry entry = GetConfigEntry(position);
+            ProcessConfigEntry(args, entry, *position);
           }
-          catch(SyntaxErrorException seEx) {
+          catch(SyntaxErrorException &seEx) {
             isyslog("externalplayer-plugin: syntax error in config file: line %i, column %i! Ignoring entry.",
-                    seEx.getLineNumber(), seEx.getColumnNumber());
+                    seEx.GetLineNumber(), seEx.GetColumnNumber());
           }
-          catch (InvalidKeywordException ikEx) {
+          catch (InvalidKeywordException &ikEx) {
             isyslog("externalplayer-plugin: error in config file: invalig keyword \"%s\" line %i!",
-                  ikEx.getKeyword().c_str(), ikEx.getLineNumber());
+                  ikEx.GetKeyword().c_str(), ikEx.GetLineNumber());
           }
         }
+        break;
     }
   }
 
@@ -320,7 +329,7 @@ sPlayerArgs * cExternalplayerConfig::getConfiguration(unsigned int * position) {
   return args;
 }
 
-sConfigEntry cExternalplayerConfig::getConfigEntry(unsigned int * position) {
+sConfigEntry cExternalplayerConfig::GetConfigEntry(unsigned int * position) {
   sConfigEntry entry;
 
   while ((*configFileContent)[*position] != '=') {
@@ -360,6 +369,7 @@ sConfigEntry cExternalplayerConfig::getConfigEntry(unsigned int * position) {
       default:
         entry.key += (*configFileContent)[*position];
         (*position)++;
+        break;
     }
   }
   (*position)++;
@@ -410,17 +420,18 @@ sConfigEntry cExternalplayerConfig::getConfigEntry(unsigned int * position) {
       default:
         entry.value += (*configFileContent)[*position];
         (*position)++;
+        break;
     }
   }
   (*position)++;
 
-  removeUnnecessarySymbols(&(entry.key));
-  removeUnnecessarySymbols(&(entry.value));
+  RemoveUnnecessarySymbols(&(entry.key));
+  RemoveUnnecessarySymbols(&(entry.value));
 
   return entry;
 }
 
-void cExternalplayerConfig::removeUnnecessarySymbols(string * stringPtr) {
+void cExternalplayerConfig::RemoveUnnecessarySymbols(string *stringPtr) {
   while ((*stringPtr)[0] == ' ') {
     stringPtr->erase(stringPtr->begin());
   }
@@ -431,7 +442,7 @@ void cExternalplayerConfig::removeUnnecessarySymbols(string * stringPtr) {
 
 }
 
-void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry entry, int position) {
+void cExternalplayerConfig::ProcessConfigEntry(sPlayerArgs *args, sConfigEntry entry, int position) {
   if (entry.key == "Command") {
     args->playerCommand = entry.value;
   }
@@ -487,7 +498,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyUp") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyUp;
         args->keys->vdrKeyUp = keyString;
@@ -504,7 +515,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyDown") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyDown;
         args->keys->vdrKeyDown = keyString;
@@ -521,7 +532,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyLeft") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyLeft;
         args->keys->vdrKeyLeft = keyString;
@@ -538,7 +549,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyRight") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyRight;
         args->keys->vdrKeyRight = keyString;
@@ -555,7 +566,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyOk") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyOk;
         args->keys->vdrKeyOk = keyString;
@@ -572,7 +583,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyBack") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyBack;
         args->keys->vdrKeyBack = keyString;
@@ -589,7 +600,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyRed") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyRed;
         args->keys->vdrKeyRed = keyString;
@@ -606,7 +617,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyGreen") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyGreen;
         args->keys->vdrKeyGreen = keyString;
@@ -623,7 +634,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyYellow") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyYellow;
         args->keys->vdrKeyYellow = keyString;
@@ -640,7 +651,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyBlue") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyBlue;
         args->keys->vdrKeyBlue = keyString;
@@ -657,7 +668,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKey0") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKey0;
         args->keys->vdrKey0 = keyString;
@@ -674,7 +685,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKey1") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKey1;
         args->keys->vdrKey1 = keyString;
@@ -691,7 +702,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKey2") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKey2;
         args->keys->vdrKey2 = keyString;
@@ -708,7 +719,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKey3") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKey3;
         args->keys->vdrKey3 = keyString;
@@ -725,7 +736,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKey4") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKey4;
         args->keys->vdrKey4 = keyString;
@@ -742,7 +753,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKey5") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKey5;
         args->keys->vdrKey5 = keyString;
@@ -759,7 +770,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKey6") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKey6;
         args->keys->vdrKey6 = keyString;
@@ -776,7 +787,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKey7") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKey7;
         args->keys->vdrKey7 = keyString;
@@ -793,7 +804,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKey8") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKey8;
         args->keys->vdrKey8 = keyString;
@@ -810,7 +821,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKey9") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKey9;
         args->keys->vdrKey9 = keyString;
@@ -827,7 +838,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyPlay") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyPlay;
         args->keys->vdrKeyPlay = keyString;
@@ -844,7 +855,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyPause") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyPause;
         args->keys->vdrKeyPause = keyString;
@@ -861,7 +872,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyStop") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyStop;
         args->keys->vdrKeyStop = keyString;
@@ -878,7 +889,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyRecord") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyRecord;
         args->keys->vdrKeyRecord = keyString;
@@ -895,7 +906,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyFastFwd") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyFastFwd;
         args->keys->vdrKeyFastFwd = keyString;
@@ -912,7 +923,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyFaswRew") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyFaswRew;
         args->keys->vdrKeyFaswRew = keyString;
@@ -929,7 +940,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyAudio") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyAudio;
         args->keys->vdrKeyAudio = keyString;
@@ -946,7 +957,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeySchedule") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeySchedule;
         args->keys->vdrKeySchedule = keyString;
@@ -963,7 +974,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyChannels") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyChannels;
         args->keys->vdrKeyChannels = keyString;
@@ -980,7 +991,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyTimers") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyTimers;
         args->keys->vdrKeyTimers = keyString;
@@ -997,7 +1008,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyRecordings") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyRecordings;
         args->keys->vdrKeyRecordings = keyString;
@@ -1014,7 +1025,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeySetup") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeySetup;
         args->keys->vdrKeySetup = keyString;
@@ -1031,7 +1042,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyCommands") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyCommands;
         args->keys->vdrKeyCommands = keyString;
@@ -1048,7 +1059,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyUser1") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyUser1;
         args->keys->vdrKeyUser1 = keyString;
@@ -1065,7 +1076,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyUser2") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyUser2;
         args->keys->vdrKeyUser2 = keyString;
@@ -1082,7 +1093,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyUser3") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyUser3;
         args->keys->vdrKeyUser3 = keyString;
@@ -1099,7 +1110,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyUser4") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyUser4;
         args->keys->vdrKeyUser4 = keyString;
@@ -1116,7 +1127,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyUser5") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyUser5;
         args->keys->vdrKeyUser5 = keyString;
@@ -1133,7 +1144,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyUser6") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyUser6;
         args->keys->vdrKeyUser6 = keyString;
@@ -1150,7 +1161,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyUser7") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyUser7;
         args->keys->vdrKeyUser7 = keyString;
@@ -1167,7 +1178,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyUser8") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyUser8;
         args->keys->vdrKeyUser8 = keyString;
@@ -1184,7 +1195,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
 
   else if (entry.key == "vdrKeyUser9") {
     if (entry.value.size() > 1) {
-      string * keyString = getCodeSpecialKey(entry.value);
+      string * keyString = GetCodeSpecialKey(entry.value);
       if (keyString != NULL) {
         delete args->keys->vdrKeyUser9;
         args->keys->vdrKeyUser9 = keyString;
@@ -1208,7 +1219,7 @@ void cExternalplayerConfig::processConfigEntry(sPlayerArgs * args, sConfigEntry 
   }
 }
 
-string * cExternalplayerConfig::getCodeSpecialKey(string name) {
+string * cExternalplayerConfig::GetCodeSpecialKey(string name) {
   if (name == "noKey") {
     return new string("");
   }
@@ -1289,7 +1300,7 @@ string * cExternalplayerConfig::getCodeSpecialKey(string name) {
   }
 }
 
-unsigned int cExternalplayerConfig::getLineNumberOfChar(unsigned int charNumber) {
+unsigned int cExternalplayerConfig::GetLineNumberOfChar(unsigned int charNumber) {
   unsigned int lineNumber = 0;
 
   for (unsigned int i = 0; i < charNumber; i++) {
@@ -1301,7 +1312,7 @@ unsigned int cExternalplayerConfig::getLineNumberOfChar(unsigned int charNumber)
   return lineNumber;
 }
 
-unsigned int cExternalplayerConfig::getColumnNumberOfChar(unsigned int charNumber) {
+unsigned int cExternalplayerConfig::GetColumnNumberOfChar(unsigned int charNumber) {
   unsigned int columnNumber = 1;
 
   for (unsigned int i = 0; i < charNumber; i++) {

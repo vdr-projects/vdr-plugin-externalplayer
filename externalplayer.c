@@ -1,9 +1,13 @@
 /*
  * externalplayer.c: A plugin for the Video Disk Recorder
  *
- * See the README file for copyright information and how to reach the author.
+ * Initially written by Felix Hädicke
  *
- * $Id$
+ * 2012 Ulrich Eckhardt <uli-vdr@uli-eckhardt.de>
+ *
+ * This code is distributed under the terms and conditions of the
+ * GNU GENERAL PUBLIC LICENSE. See the file COPYING for details.
+ *
  */
 
 #include <string.h>
@@ -25,7 +29,7 @@ cPluginExternalplayer::~cPluginExternalplayer() {
   delete playerConfig;
 }
 
-void cPluginExternalplayer::startPlayer(sPlayerArgs * config) {
+void cPluginExternalplayer::StartPlayer(sPlayerArgs * config) {
   isyslog("externalplayer-plugin: starting player: %s", config->menuEntry.c_str());
 
   int fdsPipe[2];
@@ -37,7 +41,7 @@ void cPluginExternalplayer::startPlayer(sPlayerArgs * config) {
 }
 
 const char *cPluginExternalplayer::CommandLineHelp() {
-  return "  -C FILE,  --config=FILE  specify path to config file\n";
+  return "  -C FILE,  --config=FILE  specify path to configuration file\n";
 }
 
 bool cPluginExternalplayer::ProcessArgs(int argc, char *argv[]) {
@@ -79,12 +83,12 @@ void cPluginExternalplayer::Housekeeping() {
 }
 
 const char * cPluginExternalplayer::MainMenuEntry() {
-  int count = playerConfig->playerCount();
+  int count = playerConfig->PlayerCount();
   if (count == 0) {
     return NULL;
   }
   else if (count == 1) {
-    return playerConfig->getConfiguration().front()->menuEntry.c_str();
+    return playerConfig->GetConfiguration().front()->menuEntry.c_str();
   }
   else {
     return tr("External Players");
@@ -92,12 +96,12 @@ const char * cPluginExternalplayer::MainMenuEntry() {
 }
 
 cOsdObject * cPluginExternalplayer::MainMenuAction() {
-  int count = playerConfig->playerCount();
+  int count = playerConfig->PlayerCount();
   if (count == 0) {
     return NULL;
   }
   else if (count == 1) {
-    startPlayer(playerConfig->getConfiguration().front());
+    StartPlayer(playerConfig->GetConfiguration().front());
     return NULL;
   }
   else {
@@ -121,7 +125,7 @@ bool cPluginExternalplayer::Service(const char *Id, void *Data) {
 
 cOsdExternalplayer::cOsdExternalplayer(cExternalplayerConfig * nPlayerConfig) : cOsdMenu(tr("External Players")) {
   playerConfig = nPlayerConfig;
-  list<sPlayerArgs *> playerArgs = playerConfig->getConfiguration();
+  list<sPlayerArgs *> playerArgs = playerConfig->GetConfiguration();
   for (list<sPlayerArgs *>::iterator i = playerArgs.begin(); i != playerArgs.end(); i++) {
       Add(new cOsdItemExternalplayer(*i));
   }
@@ -138,7 +142,7 @@ cOsdItemExternalplayer::cOsdItemExternalplayer(sPlayerArgs * nConfig) : cOsdItem
 
 eOSState cOsdItemExternalplayer::ProcessKey(eKeys key) {
   if (key == kOk) {
-    cPluginExternalplayer::startPlayer(config);
+    cPluginExternalplayer::StartPlayer(config);
     return osEnd;
   }
   return osUnknown;

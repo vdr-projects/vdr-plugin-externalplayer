@@ -1,9 +1,13 @@
 /*
  * externalplayer-player.c: A plugin for the Video Disk Recorder
  *
- * See the README file for copyright information and how to reach the author.
+ * Initially written by Felix Hädicke
  *
- * $Id$
+ * 2013 Ulrich Eckhardt <uli-vdr@uli-eckhardt.de>
+ *
+ * This code is distributed under the terms and conditions of the
+ * GNU GENERAL PUBLIC LICENSE. See the file COPYING for details.
+ *
  */
 
 #include <sys/types.h>
@@ -47,7 +51,7 @@ cPlayerExternalplayer::~cPlayerExternalplayer() {
 void cPlayerExternalplayer::Activate(bool On) {
   if (On) {
     if (remotesDisable != NULL) {
-      remotesDisable->deactivateRemotes();
+      remotesDisable->DeactivateRemotes();
     }
 
     int nPid = fork();
@@ -68,7 +72,7 @@ void cPlayerExternalplayer::Activate(bool On) {
   }
   else {
     if (remotesDisable != NULL) {
-      remotesDisable->reactivateRemotes();
+      remotesDisable->ReactivateRemotes();
     }
 
     if (pid != 0) {
