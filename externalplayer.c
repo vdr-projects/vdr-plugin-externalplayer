@@ -30,10 +30,10 @@ cPluginExternalplayer::~cPluginExternalplayer() {
 }
 
 void cPluginExternalplayer::StartPlayer(sPlayerArgs * config) {
-  isyslog("externalplayer-plugin: starting player: %s", config->menuEntry.c_str());
+  isyslog("externalplayer-plugin: starting player: %s", config->mMenuEntry.c_str());
 
   int fdsPipe[2];
-  if (config->slaveMode) {
+  if (config->mSlaveMode) {
     pipe(fdsPipe);
   }
 
@@ -88,7 +88,7 @@ const char * cPluginExternalplayer::MainMenuEntry() {
     return NULL;
   }
   else if (count == 1) {
-    return playerConfig->GetConfiguration().front()->menuEntry.c_str();
+    return playerConfig->GetConfiguration().front()->mMenuEntry.c_str();
   }
   else {
     return tr("External Players");
@@ -134,7 +134,7 @@ cOsdExternalplayer::cOsdExternalplayer(cExternalplayerConfig * nPlayerConfig) : 
 cOsdExternalplayer::~cOsdExternalplayer() {
 }
 
-cOsdItemExternalplayer::cOsdItemExternalplayer(sPlayerArgs * nConfig) : cOsdItem(nConfig->menuEntry.c_str()) {
+cOsdItemExternalplayer::cOsdItemExternalplayer(sPlayerArgs * nConfig) : cOsdItem(nConfig->mMenuEntry.c_str()) {
   config = nConfig;
 }
 

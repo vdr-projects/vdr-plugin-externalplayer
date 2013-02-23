@@ -12,120 +12,35 @@
 #include "externalplayer-config.h"
 
 sKeymap::sKeymap() {
-  vdrKeyUp = new string("\e[A");
-  vdrKeyDown = new string("\e[B");
-  vdrKeyLeft = new string("\e[D");
-  vdrKeyRight = new string("\e[C");
-  vdrKeyOk = NULL;
-  vdrKeyBack = NULL;
-  vdrKeyRed = NULL;
-  vdrKeyGreen = NULL;
-  vdrKeyYellow = NULL;
-  vdrKeyBlue = NULL;
-  vdrKey0 = new string("0");
-  vdrKey1 = new string("1");
-  vdrKey2 = new string("2");
-  vdrKey3 = new string("3");
-  vdrKey4 = new string("4");
-  vdrKey5 = new string("5");
-  vdrKey6 = new string("6");
-  vdrKey7 = new string("7");
-  vdrKey8 = new string("8");
-  vdrKey9 = new string("9");
-  vdrKeyPlay = NULL;
-  vdrKeyPause = NULL;
-  vdrKeyStop = NULL;
-  vdrKeyRecord = NULL;
-  vdrKeyFastFwd = NULL;
-  vdrKeyFaswRew = NULL;
-  vdrKeyAudio = NULL;
-  vdrKeySchedule = NULL;
-  vdrKeyChannels = NULL;
-  vdrKeyTimers = NULL;
-  vdrKeyRecordings = NULL;
-  vdrKeySetup = NULL;
-  vdrKeyCommands = NULL;
-  vdrKeyUser1 = NULL;
-  vdrKeyUser2 = NULL;
-  vdrKeyUser3 = NULL;
-  vdrKeyUser4 = NULL;
-  vdrKeyUser5 = NULL;
-  vdrKeyUser6 = NULL;
-  vdrKeyUser7 = NULL;
-  vdrKeyUser8 = NULL;
-  vdrKeyUser9 = NULL;
-  vdrKeyChannelUp = NULL;
-  vdrKeyChannelDown = NULL;
-}
+    mKeyMap[kUp] = "\e[A";
+    mKeyMap[kDown] = "\e[B";
+    mKeyMap[kLeft] = "\e[D";
+    mKeyMap[kRight] = "\e[C";
 
-sKeymap::~sKeymap() {
-  delete vdrKeyUp;
-  delete vdrKeyDown;
-  delete vdrKeyLeft;
-  delete vdrKeyRight;
-  delete vdrKeyOk;
-  delete vdrKeyBack;
-  delete vdrKeyRed;
-  delete vdrKeyGreen;
-  delete vdrKeyYellow;
-  delete vdrKeyBlue;
-  delete vdrKey0;
-  delete vdrKey1;
-  delete vdrKey2;
-  delete vdrKey3;
-  delete vdrKey4;
-  delete vdrKey5;
-  delete vdrKey6;
-  delete vdrKey7;
-  delete vdrKey8;
-  delete vdrKey9;
-  delete vdrKeyPlay;
-  delete vdrKeyPause;
-  delete vdrKeyStop;
-  delete vdrKeyRecord;
-  delete vdrKeyFastFwd;
-  delete vdrKeyFaswRew;
-  delete vdrKeyAudio;
-  delete vdrKeySchedule;
-  delete vdrKeyChannels;
-  delete vdrKeyTimers;
-  delete vdrKeyRecordings;
-  delete vdrKeySetup;
-  delete vdrKeyCommands;
-  delete vdrKeyUser1;
-  delete vdrKeyUser2;
-  delete vdrKeyUser3;
-  delete vdrKeyUser4;
-  delete vdrKeyUser5;
-  delete vdrKeyUser6;
-  delete vdrKeyUser7;
-  delete vdrKeyUser8;
-  delete vdrKeyUser9;
-  delete vdrKeyChannelUp;
-  delete vdrKeyChannelDown;
+    mKeyMap[k0] = "0";
+    mKeyMap[k1] = "1";
+    mKeyMap[k2] = "2";
+    mKeyMap[k3] = "3";
+    mKeyMap[k4] = "4";
+    mKeyMap[k5] = "5";
+    mKeyMap[k6] = "6";
+    mKeyMap[k7] = "7";
+    mKeyMap[k8] = "8";
+    mKeyMap[k9] = "9";
 }
 
 // --- sPlayerArgs ----------------------------------------------------------
 
 sPlayerArgs::sPlayerArgs() {
-  menuEntry = "";
-  playerCommand = "";
-  slaveMode = false;
-  playMode = pmExtern_THIS_SHOULD_BE_AVOIDED;
-  deactivateRemotes = false;
-  blockMenu = false;
-  keys = new sKeymap();
+  mMenuEntry = "";
+  mPlayerCommand = "";
+  mSlaveMode = false;
+  mPlayMode = pmExtern_THIS_SHOULD_BE_AVOIDED;
+  mDeactivateRemotes = false;
+  mBlockMenu = false;
 }
 
-sPlayerArgs::~sPlayerArgs() {
-  delete keys;
-}
-
-// --- FileNotFoundException -------------------------------------------------
-
-FileNotFoundException::FileNotFoundException(string nFilename) {
-  filename = nFilename;
-}
+// --- SyntaxErrorException -------------------------------------------------
 
 SyntaxErrorException::SyntaxErrorException(int nCharNumber, string * nConfigFileContent) {
   charNumber = nCharNumber;
@@ -322,8 +237,8 @@ sPlayerArgs * cExternalplayerConfig::GetConfiguration(unsigned int * position) {
     }
   }
 
-  if ((args->playerCommand == "") || (args->menuEntry == "")) {
-    throw EntryMissingException(args->playerCommand, args->menuEntry, *position, configFileContent);
+  if ((args->mPlayerCommand == "") || (args->mMenuEntry == "")) {
+    throw EntryMissingException(args->mPlayerCommand, args->mMenuEntry, *position, configFileContent);
   }
 
   return args;
@@ -443,783 +358,86 @@ void cExternalplayerConfig::RemoveUnnecessarySymbols(string *stringPtr) {
 }
 
 void cExternalplayerConfig::ProcessConfigEntry(sPlayerArgs *args, sConfigEntry entry, int position) {
-  if (entry.key == "Command") {
-    args->playerCommand = entry.value;
-  }
+    cKey keys;
+    bool found = false;
 
-  else if (entry.key == "MenuEntry") {
-    args->menuEntry = entry.value;
-  }
+    if (entry.key.empty() || entry.value.empty()) {
+        throw SyntaxErrorException(position, configFileContent);
+    }
 
-  else if (entry.key == "InputMode") {
-    if (entry.value == "deactivateRemotes") {
-      args->deactivateRemotes = true;
-      args->slaveMode = false;
+    if (entry.key == "Command") {
+        args->mPlayerCommand = entry.value;
     }
-    else if (entry.value == "slave") {
-      args->deactivateRemotes = false;
-      args->slaveMode = true;
+    else if (entry.key == "MenuEntry") {
+        args->mMenuEntry = entry.value;
     }
-    else if (entry.value == "normal" || entry.value == "default") {
-      args->deactivateRemotes = false;
-      args->slaveMode = false;
+    else if (entry.key == "InputMode") {
+        if (entry.value == "deactivateRemotes") {
+            args->mDeactivateRemotes = true;
+            args->mSlaveMode = false;
+        }
+        else if (entry.value == "slave") {
+            args->mDeactivateRemotes = false;
+            args->mSlaveMode = true;
+        }
+        else if (entry.value == "normal" || entry.value == "default") {
+            args->mDeactivateRemotes = false;
+            args->mSlaveMode = false;
+        }
+        else {
+            throw InvalidKeywordException(entry.value, position, configFileContent);
+        }
+    }
+    else if (entry.key == "OutputMode") {
+        if (entry.value == "extern") {
+            args->mPlayMode = pmExtern_THIS_SHOULD_BE_AVOIDED;
+        }
+        else if (entry.value == "none") {
+            args->mPlayMode = pmNone;
+        }
+        else if (entry.value == "audioOnly") {
+            args->mPlayMode = pmAudioOnly;
+        }
+        else if (entry.value == "audioOnlyBlack") {
+            args->mPlayMode = pmAudioOnlyBlack;
+        }
+    }
+    else if (entry.key == "BlockMenu") {
+        if ((entry.value == "true") || (entry.value == "1")) {
+            args->mBlockMenu = true;
+        }
+        else if (entry.value == "false" || (entry.value == "0")) {
+            args->mBlockMenu = false;
+        }
+        else {
+            throw InvalidKeywordException(entry.value, position, configFileContent);
+        }
     }
     else {
-      throw InvalidKeywordException(entry.value, position, configFileContent);
+        for (int key = kUp; key <= kKbd; key++) {
+            string keyname = "vdr";
+            keyname += keys.ToString((eKeys)key, false);
+            if (entry.key == keyname) {
+                found = true;
+                string *keyString = GetCodeSpecialKey(entry.value);
+                if (keyString != NULL) {
+                    args->mKeys.SetKey ((eKeys)key, *keyString);
+                    delete keyString;
+                }
+                else {
+                    args->mKeys.SetKey((eKeys)key, entry.value);
+                }
+                break;
+            }
+        }
     }
-  }
 
-  else if (entry.key == "OutputMode") {
-    if (entry.value == "extern") {
-      args->playMode = pmExtern_THIS_SHOULD_BE_AVOIDED;
+    if (!found) {
+        throw InvalidKeywordException(entry.key, position, configFileContent);
     }
-    else if (entry.value == "none") {
-      args->playMode = pmNone;
-    }
-    else if (entry.value == "audioOnly") {
-      args->playMode = pmAudioOnly;
-    }
-    else if (entry.value == "audioOnlyBlack") {
-      args->playMode = pmAudioOnlyBlack;
-    }
-  }
-
-  else if (entry.key == "BlockMenu") {
-    if ((entry.value == "true") || (entry.value == "1")) {
-      args->blockMenu = true;
-    }
-    else if (entry.value == "false" || (entry.value == "0")) {
-      args->blockMenu = false;
-    }
-    else {
-      throw InvalidKeywordException(entry.value, position, configFileContent);
-    }
-  }
-
-  else if (entry.key == "vdrKeyUp") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyUp;
-        args->keys->vdrKeyUp = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyUp;
-      args->keys->vdrKeyUp = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyDown") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyDown;
-        args->keys->vdrKeyDown = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyDown;
-      args->keys->vdrKeyDown = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyLeft") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyLeft;
-        args->keys->vdrKeyLeft = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyLeft;
-      args->keys->vdrKeyLeft = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyRight") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyRight;
-        args->keys->vdrKeyRight = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyRight;
-      args->keys->vdrKeyRight = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyOk") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyOk;
-        args->keys->vdrKeyOk = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyOk;
-      args->keys->vdrKeyOk = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyBack") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyBack;
-        args->keys->vdrKeyBack = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyBack;
-      args->keys->vdrKeyBack = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyRed") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyRed;
-        args->keys->vdrKeyRed = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyRed;
-      args->keys->vdrKeyRed = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyGreen") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyGreen;
-        args->keys->vdrKeyGreen = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyGreen;
-      args->keys->vdrKeyGreen = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyYellow") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyYellow;
-        args->keys->vdrKeyYellow = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyYellow;
-      args->keys->vdrKeyYellow = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyBlue") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyBlue;
-        args->keys->vdrKeyBlue = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyBlue;
-      args->keys->vdrKeyBlue = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKey0") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKey0;
-        args->keys->vdrKey0 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKey0;
-      args->keys->vdrKey0 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKey1") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKey1;
-        args->keys->vdrKey1 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKey1;
-      args->keys->vdrKey1 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKey2") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKey2;
-        args->keys->vdrKey2 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKey2;
-      args->keys->vdrKey2 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKey3") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKey3;
-        args->keys->vdrKey3 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKey3;
-      args->keys->vdrKey3 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKey4") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKey4;
-        args->keys->vdrKey4 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKey4;
-      args->keys->vdrKey4 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKey5") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKey5;
-        args->keys->vdrKey5 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKey5;
-      args->keys->vdrKey5 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKey6") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKey6;
-        args->keys->vdrKey6 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKey6;
-      args->keys->vdrKey6 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKey7") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKey7;
-        args->keys->vdrKey7 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKey7;
-      args->keys->vdrKey7 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKey8") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKey8;
-        args->keys->vdrKey8 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKey8;
-      args->keys->vdrKey8 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKey9") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKey9;
-        args->keys->vdrKey9 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKey9;
-      args->keys->vdrKey9 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyPlay") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyPlay;
-        args->keys->vdrKeyPlay = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyPlay;
-      args->keys->vdrKeyPlay = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyPause") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyPause;
-        args->keys->vdrKeyPause = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyPause;
-      args->keys->vdrKeyPause = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyStop") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyStop;
-        args->keys->vdrKeyStop = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyStop;
-      args->keys->vdrKeyStop = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyRecord") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyRecord;
-        args->keys->vdrKeyRecord = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyRecord;
-      args->keys->vdrKeyRecord = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyFastFwd") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyFastFwd;
-        args->keys->vdrKeyFastFwd = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyFastFwd;
-      args->keys->vdrKeyFastFwd = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyFaswRew") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyFaswRew;
-        args->keys->vdrKeyFaswRew = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyFaswRew;
-      args->keys->vdrKeyFaswRew = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyAudio") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyAudio;
-        args->keys->vdrKeyAudio = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyAudio;
-      args->keys->vdrKeyAudio = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeySchedule") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeySchedule;
-        args->keys->vdrKeySchedule = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeySchedule;
-      args->keys->vdrKeySchedule = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyChannels") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyChannels;
-        args->keys->vdrKeyChannels = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyChannels;
-      args->keys->vdrKeyChannels = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyTimers") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyTimers;
-        args->keys->vdrKeyTimers = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyTimers;
-      args->keys->vdrKeyTimers = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyRecordings") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyRecordings;
-        args->keys->vdrKeyRecordings = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyRecordings;
-      args->keys->vdrKeyRecordings = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeySetup") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeySetup;
-        args->keys->vdrKeySetup = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeySetup;
-      args->keys->vdrKeySetup = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyCommands") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyCommands;
-        args->keys->vdrKeyCommands = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyCommands;
-      args->keys->vdrKeyCommands = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyUser1") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyUser1;
-        args->keys->vdrKeyUser1 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyUser1;
-      args->keys->vdrKeyUser1 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyUser2") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyUser2;
-        args->keys->vdrKeyUser2 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyUser2;
-      args->keys->vdrKeyUser2 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyUser3") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyUser3;
-        args->keys->vdrKeyUser3 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyUser3;
-      args->keys->vdrKeyUser3 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyUser4") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyUser4;
-        args->keys->vdrKeyUser4 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyUser4;
-      args->keys->vdrKeyUser4 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyUser5") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyUser5;
-        args->keys->vdrKeyUser5 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyUser5;
-      args->keys->vdrKeyUser5 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyUser6") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyUser6;
-        args->keys->vdrKeyUser6 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyUser6;
-      args->keys->vdrKeyUser6 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyUser7") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyUser7;
-        args->keys->vdrKeyUser7 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyUser7;
-      args->keys->vdrKeyUser7 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyUser8") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyUser8;
-        args->keys->vdrKeyUser8 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyUser8;
-      args->keys->vdrKeyUser8 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "vdrKeyUser9") {
-    if (entry.value.size() > 1) {
-      string * keyString = GetCodeSpecialKey(entry.value);
-      if (keyString != NULL) {
-        delete args->keys->vdrKeyUser9;
-        args->keys->vdrKeyUser9 = keyString;
-      }
-      else {
-        throw InvalidKeywordException(entry.value, position, configFileContent);
-      }
-    }
-    else {
-      delete args->keys->vdrKeyUser9;
-      args->keys->vdrKeyUser9 = new string(entry.value);
-    }
-  }
-
-  else if (entry.key == "" || entry.value == "") {
-    throw SyntaxErrorException(position, configFileContent);
-  }
-
-  else {
-    throw InvalidKeywordException(entry.key, position, configFileContent);
-  }
 }
 
-string * cExternalplayerConfig::GetCodeSpecialKey(string name) {
+string *cExternalplayerConfig::GetCodeSpecialKey(string name) {
   if (name == "noKey") {
     return new string("");
   }

@@ -104,7 +104,8 @@ install-lib: $(SOFILE)
 	install -D $^ $(DESTDIR)$(LIBDIR)/$^.$(APIVERSION)
 
 install-conf:
-	install -D examples/externalplayer.conf $(DESTDIR)$(CFGDIR)/externalplayer.conf
+	@mkdir -p $(DESTDIR)$(CFGDIR)
+	@cp -n examples/externalplayer.conf $(DESTDIR)$(CFGDIR)
 
 install: install-lib install-i18n install-conf
 

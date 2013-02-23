@@ -34,7 +34,7 @@ cPlayerExternalplayer::cPlayerExternalplayer(ePlayMode playMode, sPlayerArgs * n
 
   fdReadPipe = nFdReadPipe;
 
-  if (config->deactivateRemotes) {
+  if (config->mDeactivateRemotes) {
     remotesDisable = new cRemotesDisable();
   }
   else {
@@ -56,12 +56,12 @@ void cPlayerExternalplayer::Activate(bool On) {
 
     int nPid = fork();
     if (nPid == 0) {
-      if (config->slaveMode) {
+      if (config->mSlaveMode) {
         dup2(fdReadPipe, STDIN_FILENO);
       }
 
-      isyslog("externalplayer-plugin: executing \"%s\"", config->playerCommand.c_str());
-      execle("/bin/sh", "sh", "-c", config->playerCommand.c_str(), NULL, environ);
+      isyslog("externalplayer-plugin: executing \"%s\"", config->mPlayerCommand.c_str());
+      execle("/bin/sh", "sh", "-c", config->mPlayerCommand.c_str(), NULL, environ);
       isyslog("externalplayer-plugin: execution (of /bin/sh) failed");
       _exit(0);
     }

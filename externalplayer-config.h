@@ -10,6 +10,9 @@
  *
  */
 
+#ifndef _EXTERNALPLAYER_CONFIG_H_
+#define _EXTERNALPLAYER_CONFIG_H_
+
 #include <string>
 #include <list>
 #include <fstream>
@@ -17,71 +20,28 @@
 
 #include <vdr/device.h>
 #include <vdr/tools.h>
-
-#ifndef _EXTERNALPLAYER_CONFIG_H_
-#define _EXTERNALPLAYER_CONFIG_H_
+#include <vdr/keys.h>
 
 using namespace std;
 
-struct sKeymap {
-    string * vdrKeyUp;
-    string * vdrKeyDown;
-    string * vdrKeyLeft;
-    string * vdrKeyRight;
-    string * vdrKeyOk;
-    string * vdrKeyBack;
-    string * vdrKeyRed;
-    string * vdrKeyGreen;
-    string * vdrKeyYellow;
-    string * vdrKeyBlue;
-    string * vdrKey0;
-    string * vdrKey1;
-    string * vdrKey2;
-    string * vdrKey3;
-    string * vdrKey4;
-    string * vdrKey5;
-    string * vdrKey6;
-    string * vdrKey7;
-    string * vdrKey8;
-    string * vdrKey9;
-    string * vdrKeyPlay;
-    string * vdrKeyPause;
-    string * vdrKeyStop;
-    string * vdrKeyRecord;
-    string * vdrKeyFastFwd;
-    string * vdrKeyFaswRew;
-    string * vdrKeyChannelUp;
-    string * vdrKeyChannelDown;
-    string * vdrKeyAudio;
-    string * vdrKeySchedule;
-    string * vdrKeyChannels;
-    string * vdrKeyTimers;
-    string * vdrKeyRecordings;
-    string * vdrKeySetup;
-    string * vdrKeyCommands;
-    string * vdrKeyUser1;
-    string * vdrKeyUser2;
-    string * vdrKeyUser3;
-    string * vdrKeyUser4;
-    string * vdrKeyUser5;
-    string * vdrKeyUser6;
-    string * vdrKeyUser7;
-    string * vdrKeyUser8;
-    string * vdrKeyUser9;
+class sKeymap {
+private:
+    string mKeyMap[k_Setup+1];
+public:
+    void SetKey (eKeys key, const string &val) {mKeyMap[key] = val;}
+    string GetKey (eKeys key) {return mKeyMap[key];}
     sKeymap();
-    ~sKeymap();
 };
 
 struct sPlayerArgs {
-    string menuEntry;
-    string playerCommand;
-    ePlayMode playMode;
-    bool slaveMode;
-    bool deactivateRemotes;
-    bool blockMenu;
-    sKeymap * keys;
+    string mMenuEntry;
+    string mPlayerCommand;
+    ePlayMode mPlayMode;
+    bool mSlaveMode;
+    bool mDeactivateRemotes;
+    bool mBlockMenu;
+    sKeymap mKeys;
     sPlayerArgs();
-    ~sPlayerArgs();
 };
 
 struct sConfigEntry {
@@ -91,11 +51,11 @@ struct sConfigEntry {
 
 class FileNotFoundException {
 private:
-    string filename;
+    string mFilename;
 public:
-    FileNotFoundException(string nFilename);
+    FileNotFoundException(string nFilename) {mFilename = nFilename;}
     string GetFilename(void) {
-        return filename;
+        return mFilename;
     }
 };
 
