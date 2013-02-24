@@ -42,15 +42,15 @@ sPlayerArgs::sPlayerArgs() {
 
 // --- SyntaxErrorException -------------------------------------------------
 
-SyntaxErrorException::SyntaxErrorException(int nCharNumber, string * nConfigFileContent) {
-  charNumber = nCharNumber;
-  configFileContent = nConfigFileContent;
+SyntaxErrorException::SyntaxErrorException(int nCharNumber, const string &nConfigFileContent) {
+  mCharNumber = nCharNumber;
+  mConfigFileContent = nConfigFileContent;
 }
 
 int SyntaxErrorException::GetLineNumber() {
   int lineNumber = 0;
-  for (int i = 0; i < charNumber; i++) {
-    if ((*configFileContent)[i] == '\n') {
+  for (int i = 0; i < mCharNumber; i++) {
+    if (mConfigFileContent[i] == '\n') {
       lineNumber++;
     }
   }
@@ -59,8 +59,8 @@ int SyntaxErrorException::GetLineNumber() {
 
 int SyntaxErrorException::GetColumnNumber() {
   int columnNumber = 1;
-  for (int i = 0; i < charNumber; i++) {
-    if ((*configFileContent)[i] == '\n') {
+  for (int i = 0; i < mCharNumber; i++) {
+    if (mConfigFileContent[i] == '\n') {
       columnNumber = 1;
     }
     else {
@@ -72,17 +72,18 @@ int SyntaxErrorException::GetColumnNumber() {
 
 // --- EntryMissingException -------------------------------------------------
 
-EntryMissingException::EntryMissingException(string nPlayerCommand, string nMenuEntry, int nCharNumber, string * nConfigFileContent) {
-  playerCommand = nPlayerCommand;
-  menuEntry = nMenuEntry;
-  charNumber = nCharNumber;
-  configFileContent = nConfigFileContent;
+EntryMissingException::EntryMissingException(const string &nPlayerCommand, const string &nMenuEntry,
+                                             int nCharNumber, const string &nConfigFileContent) {
+  mPlayerCommand = nPlayerCommand;
+  mMenuEntry = nMenuEntry;
+  mCharNumber = nCharNumber;
+  mConfigFileContent = nConfigFileContent;
 }
 
 int EntryMissingException::GetLineNumber() {
   int lineNumber = 0;
-  for (int i = 0; i < charNumber; i++) {
-    if ((*configFileContent)[i] == '\n') {
+  for (int i = 0; i < mCharNumber; i++) {
+    if (mConfigFileContent[i] == '\n') {
       lineNumber++;
     }
   }
@@ -91,16 +92,17 @@ int EntryMissingException::GetLineNumber() {
 
 // --- InvalidKeywordException -----------------------------------------------
 
-InvalidKeywordException::InvalidKeywordException(string nKeyword, int nCharNumber, string * nConfigFileContent) {
-  keyword = nKeyword;
-  charNumber = nCharNumber;
-  configFileContent = nConfigFileContent;
+InvalidKeywordException::InvalidKeywordException(const string &nKeyword, int nCharNumber,
+                                                 const string &nConfigFileContent) {
+  mKeyword = nKeyword;
+  mCharNumber = nCharNumber;
+  mConfigFileContent = nConfigFileContent;
 }
 
 int InvalidKeywordException::GetLineNumber() {
   int lineNumber = 0;
-  for (int i = 0; i < charNumber; i++) {
-    if ((*configFileContent)[i] == '\n') {
+  for (int i = 0; i < mCharNumber; i++) {
+    if (mConfigFileContent[i] == '\n') {
       lineNumber++;
     }
   }
@@ -111,24 +113,23 @@ int InvalidKeywordException::GetLineNumber() {
 
 cExternalplayerConfig::cExternalplayerConfig(string filename) {
   try {
-    configFileContent = ReadConfigFile(filename);
+    mConfigFileContent = ReadConfigFile(filename);
     configuration = ParseConfigFile();
   }
   catch (FileNotFoundException &fnfEx) {
-    configFileContent = NULL;
+    mConfigFileContent.clear();
     isyslog("externalplayer-plugin: Configuration file \"%s\" not found!\n", fnfEx.GetFilename().c_str());
   }
 }
 
 cExternalplayerConfig::~cExternalplayerConfig() {
-  delete configFileContent;
   while (!configuration.empty()) {
     delete configuration.back();
     configuration.pop_back();
   }
 }
 
-string * cExternalplayerConfig::ReadConfigFile(string filename) {
+string cExternalplayerConfig::ReadConfigFile(const string &filename) {
   ifstream playerConfigStream;
   playerConfigStream.open(filename.c_str(), ios::in);
 
@@ -136,15 +137,14 @@ string * cExternalplayerConfig::ReadConfigFile(string filename) {
     throw FileNotFoundException(filename);
   }
 
-  string * configFileContent = new string();
-
+  string configFileContent;
   char buffer[256];
 
   while (!playerConfigStream.eof()) {
     playerConfigStream.getline(buffer, 256);
-    (*configFileContent) = (*configFileContent) + '\n' + buffer;
+    configFileContent = configFileContent + '\n' + buffer;
   }
-  (*configFileContent) = (*configFileContent) + '\n';
+  configFileContent = configFileContent + '\n';
 
   playerConfigStream.close();
 
@@ -155,13 +155,13 @@ list<sPlayerArgs *> cExternalplayerConfig::ParseConfigFile() {
   list<sPlayerArgs *> configuration;
   sPlayerArgs * playerConfig = NULL;
 
-  for (unsigned int i = 0; i < configFileContent->size(); i++) {
-    switch ((*configFileContent)[i]) {
+  for (unsigned int i = 0; i < mConfigFileContent.size(); i++) {
+    switch (mConfigFileContent[i]) {
       case ' ':
       case '\n':
         break;
       case '#':
-        while ((*configFileContent)[i] != '\n') {
+        while (mConfigFileContent[i] != '\n') {
           i++;
         }
         break;
@@ -185,7 +185,7 @@ list<sPlayerArgs *> cExternalplayerConfig::ParseConfigFile() {
         break;
       default:
         unsigned int errorPosition = i;
-        while ((*configFileContent)[i] != '\n') {
+        while (mConfigFileContent[i] != '\n') {
           i++;
         }
         i++;
@@ -202,34 +202,35 @@ sPlayerArgs * cExternalplayerConfig::GetConfiguration(unsigned int * position) {
   sPlayerArgs * args = new sPlayerArgs();
 
   bool endOfFile = false;
-  while ((*configFileContent)[*position] != '}' && !endOfFile) {
-    switch ((*configFileContent)[*position]) {
+  while (mConfigFileContent[*position] != '}' && !endOfFile) {
+    switch (mConfigFileContent[*position]) {
       case ' ':
       case '\n':
         (*position)++;
         break;
       case '#':
-        while ((*configFileContent)[*position] != '\n') {
+        while (mConfigFileContent[*position] != '\n') {
           (*position)++;
         }
         (*position)++;
         break;
       default:
-        if (*position >= configFileContent->size()) {
-          isyslog("externalplayer-plugin: no \"}\" at end of file!");
+        if (*position >= mConfigFileContent.size()) {
+          esyslog("externalplayer-plugin: no \"}\" at end of file!");
           endOfFile = true;
         }
         else {
           try {
             sConfigEntry entry = GetConfigEntry(position);
+            dsyslog ("Entry %s, %s", entry.key.c_str(), entry.value.c_str());
             ProcessConfigEntry(args, entry, *position);
           }
           catch(SyntaxErrorException &seEx) {
-            isyslog("externalplayer-plugin: syntax error in config file: line %i, column %i! Ignoring entry.",
+            esyslog("externalplayer-plugin: syntax error in config file: line %i, column %i! Ignoring entry.",
                     seEx.GetLineNumber(), seEx.GetColumnNumber());
           }
           catch (InvalidKeywordException &ikEx) {
-            isyslog("externalplayer-plugin: error in config file: invalig keyword \"%s\" line %i!",
+            esyslog("externalplayer-plugin: error in config file: invalig keyword \"%s\" line %i!",
                   ikEx.GetKeyword().c_str(), ikEx.GetLineNumber());
           }
         }
@@ -238,17 +239,18 @@ sPlayerArgs * cExternalplayerConfig::GetConfiguration(unsigned int * position) {
   }
 
   if ((args->mPlayerCommand == "") || (args->mMenuEntry == "")) {
-    throw EntryMissingException(args->mPlayerCommand, args->mMenuEntry, *position, configFileContent);
+    throw EntryMissingException(args->mPlayerCommand, args->mMenuEntry, *position, mConfigFileContent);
   }
 
   return args;
 }
 
-sConfigEntry cExternalplayerConfig::GetConfigEntry(unsigned int * position) {
+sConfigEntry cExternalplayerConfig::GetConfigEntry(unsigned int * position)
+{
   sConfigEntry entry;
 
-  while ((*configFileContent)[*position] != '=') {
-    switch((*configFileContent)[*position]) {
+  while (mConfigFileContent[*position] != '=') {
+    switch(mConfigFileContent[*position]) {
       case '{':
       case '}':
       case '\n':
@@ -257,40 +259,40 @@ sConfigEntry cExternalplayerConfig::GetConfigEntry(unsigned int * position) {
         {
           unsigned int errorPosition = *position;
           (*position)++;
-          while ((*configFileContent)[*position] != '\n' && (*configFileContent)[*position] != ';' \
-                  && (*configFileContent)[*position] != '{' && (*configFileContent)[*position] != '}') {
+          while ((mConfigFileContent[*position] != '\n') && (mConfigFileContent[*position] != ';') &&
+                 (mConfigFileContent[*position] != '{') && (mConfigFileContent[*position] != '}')) {
             (*position)++;
           }
-          if ((*configFileContent)[*position] != '{' && (*configFileContent)[*position] != '}') {
+          if (mConfigFileContent[*position] != '{' && mConfigFileContent[*position] != '}') {
             (*position)++;
           }
-          throw SyntaxErrorException(errorPosition, configFileContent);
+          throw SyntaxErrorException(errorPosition, mConfigFileContent);
         }
         break;
       case '#':
         {
           unsigned int errorPosition = *position;
           (*position)++;
-          while ((*configFileContent)[*position] != '\n' && (*configFileContent)[*position] != ';' \
-                  && (*configFileContent)[*position] != '{' && (*configFileContent)[*position] != '}') {
+          while ((mConfigFileContent[*position] != '\n') && (mConfigFileContent[*position] != ';') &&
+                 (mConfigFileContent[*position] != '{') && (mConfigFileContent[*position] != '}')) {
             (*position)++;
           }
-          if ((*configFileContent)[*position] != '{' && (*configFileContent)[*position] != '}') {
+          if ((mConfigFileContent[*position] != '{') && (mConfigFileContent[*position] != '}')) {
             (*position)++;
           }
-          throw SyntaxErrorException(errorPosition, configFileContent);
+          throw SyntaxErrorException(errorPosition, mConfigFileContent);
         }
         break;
       default:
-        entry.key += (*configFileContent)[*position];
+        entry.key += mConfigFileContent[*position];
         (*position)++;
         break;
     }
   }
   (*position)++;
 
-  while ((*configFileContent)[*position] != ';') {
-    switch((*configFileContent)[*position]) {
+  while (mConfigFileContent[*position] != ';') {
+    switch(mConfigFileContent[*position]) {
       case '{':
       case '}':
       case '\n':
@@ -298,23 +300,23 @@ sConfigEntry cExternalplayerConfig::GetConfigEntry(unsigned int * position) {
         {
           unsigned int errorPosition = *position;
           (*position)++;
-          while ((*configFileContent)[*position] != '\n' && (*configFileContent)[*position] != ';' \
-                  && (*configFileContent)[*position] != '{' && (*configFileContent)[*position] != '}') {
+          while ((mConfigFileContent[*position] != '\n') && (mConfigFileContent[*position] != ';') &&
+                 (mConfigFileContent[*position] != '{') && (mConfigFileContent[*position] != '}')) {
             (*position)++;
           }
-          if ((*configFileContent)[*position] != '{' && (*configFileContent)[*position] != '}') {
+          if ((mConfigFileContent[*position] != '{') && (mConfigFileContent[*position] != '}')) {
             (*position)++;
           }
-          throw SyntaxErrorException(errorPosition, configFileContent);
+          throw SyntaxErrorException(errorPosition, mConfigFileContent);
         }
       break;
       case '\"':
-        while ((*configFileContent)[*position] != '\"') {
+        while (mConfigFileContent[*position] != '\"') {
           (*position)++;
-          if ((*configFileContent)[*position] == '\n') {
-            throw SyntaxErrorException(*position, configFileContent);
+          if (mConfigFileContent[*position] == '\n') {
+            throw SyntaxErrorException(*position, mConfigFileContent);
           }
-          entry.value += (*configFileContent)[*position];
+          entry.value += mConfigFileContent[*position];
         }
         (*position)++;
         break;
@@ -322,225 +324,231 @@ sConfigEntry cExternalplayerConfig::GetConfigEntry(unsigned int * position) {
         {
           int errorPosition = *position;
           (*position)++;
-          while ((*configFileContent)[*position] != '\n' && (*configFileContent)[*position] != ';' \
-                  && (*configFileContent)[*position] != '{' && (*configFileContent)[*position] != '}') {
+          while ((mConfigFileContent[*position] != '\n') && (mConfigFileContent[*position] != ';') &&
+                 (mConfigFileContent[*position] != '{') && (mConfigFileContent[*position] != '}')) {
             (*position)++;
           }
-          if ((*configFileContent)[*position] != '{' && (*configFileContent)[*position] != '}') {
+          if ((mConfigFileContent[*position] != '{') && (mConfigFileContent[*position] != '}')) {
             (*position)++;
           }
-          throw SyntaxErrorException(errorPosition, configFileContent);
+          throw SyntaxErrorException(errorPosition, mConfigFileContent);
         }
         break;
       default:
-        entry.value += (*configFileContent)[*position];
+        entry.value += mConfigFileContent[*position];
         (*position)++;
         break;
     }
   }
   (*position)++;
 
-  RemoveUnnecessarySymbols(&(entry.key));
-  RemoveUnnecessarySymbols(&(entry.value));
+  RemoveUnnecessarySymbols(entry.key);
+  RemoveUnnecessarySymbols(entry.value);
 
   return entry;
 }
 
-void cExternalplayerConfig::RemoveUnnecessarySymbols(string *stringPtr) {
-  while ((*stringPtr)[0] == ' ') {
-    stringPtr->erase(stringPtr->begin());
+void cExternalplayerConfig::RemoveUnnecessarySymbols(string &stringPtr) {
+  while (stringPtr[0] == ' ') {
+    stringPtr.erase(stringPtr.begin());
   }
 
-  while ((*stringPtr)[stringPtr->size() - 1] == ' ') {
-    stringPtr->erase((stringPtr->end() - 1), (stringPtr->end()));
+  while (stringPtr[stringPtr.size() - 1] == ' ') {
+    stringPtr.erase((stringPtr.end() - 1), (stringPtr.end()));
   }
-
 }
 
 void cExternalplayerConfig::ProcessConfigEntry(sPlayerArgs *args, sConfigEntry entry, int position) {
     cKey keys;
-    bool found = false;
+    bool found = true;
 
     if (entry.key.empty() || entry.value.empty()) {
-        throw SyntaxErrorException(position, configFileContent);
+        throw SyntaxErrorException(position, mConfigFileContent);
     }
 
-    if (entry.key == "Command") {
+    if (StringTool::strcasecmp (entry.key, "Command")) {
         args->mPlayerCommand = entry.value;
     }
-    else if (entry.key == "MenuEntry") {
+    else if (StringTool::strcasecmp (entry.key, "MenuEntry")) {
         args->mMenuEntry = entry.value;
     }
-    else if (entry.key == "InputMode") {
-        if (entry.value == "deactivateRemotes") {
+    else if (StringTool::strcasecmp (entry.key, "InputMode")) {
+        if (StringTool::strcasecmp (entry.value, "deactivateRemotes")) {
             args->mDeactivateRemotes = true;
             args->mSlaveMode = false;
         }
-        else if (entry.value == "slave") {
+        else if (StringTool::strcasecmp (entry.value, "slave")) {
             args->mDeactivateRemotes = false;
             args->mSlaveMode = true;
         }
-        else if (entry.value == "normal" || entry.value == "default") {
+        else if (StringTool::strcasecmp (entry.value, "normal") ||
+                 StringTool::strcasecmp (entry.value, "default")) {
             args->mDeactivateRemotes = false;
             args->mSlaveMode = false;
         }
         else {
-            throw InvalidKeywordException(entry.value, position, configFileContent);
+            throw InvalidKeywordException(entry.value, position, mConfigFileContent);
         }
     }
-    else if (entry.key == "OutputMode") {
-        if (entry.value == "extern") {
+    else if (StringTool::strcasecmp (entry.key, "OutputMode")) {
+        if (StringTool::strcasecmp (entry.value, "extern")) {
             args->mPlayMode = pmExtern_THIS_SHOULD_BE_AVOIDED;
         }
-        else if (entry.value == "none") {
+        else if (StringTool::strcasecmp (entry.value, "none")) {
             args->mPlayMode = pmNone;
         }
-        else if (entry.value == "audioOnly") {
+        else if (StringTool::strcasecmp (entry.value, "audioOnly")) {
             args->mPlayMode = pmAudioOnly;
         }
-        else if (entry.value == "audioOnlyBlack") {
+        else if (StringTool::strcasecmp (entry.value, "audioOnlyBlack")) {
             args->mPlayMode = pmAudioOnlyBlack;
         }
     }
-    else if (entry.key == "BlockMenu") {
-        if ((entry.value == "true") || (entry.value == "1")) {
+    else if (StringTool::strcasecmp (entry.key, "BlockMenu")) {
+        if ((StringTool::strcasecmp (entry.value, "true")) || (entry.value == "1")) {
             args->mBlockMenu = true;
         }
-        else if (entry.value == "false" || (entry.value == "0")) {
+        else if (StringTool::strcasecmp (entry.value, "false") || (entry.value == "0")) {
             args->mBlockMenu = false;
         }
         else {
-            throw InvalidKeywordException(entry.value, position, configFileContent);
+            throw InvalidKeywordException(entry.value, position, mConfigFileContent);
         }
     }
     else {
+        found = false;
+        string keyname;
+        const char *vdrkeyname;
         for (int key = kUp; key <= kKbd; key++) {
-            string keyname = "vdr";
-            keyname += keys.ToString((eKeys)key, false);
-            if (entry.key == keyname) {
-                found = true;
-                string *keyString = GetCodeSpecialKey(entry.value);
-                if (keyString != NULL) {
-                    args->mKeys.SetKey ((eKeys)key, *keyString);
-                    delete keyString;
+            vdrkeyname = keys.ToString((eKeys)key, false);
+            if (vdrkeyname != NULL)
+            {
+                keyname = "vdrKey";
+                keyname += vdrkeyname;
+                if (StringTool::strcasecmp (entry.key, keyname)) {
+                    found = true;
+                    string *keyString = GetCodeSpecialKey(entry.value);
+                    if (keyString != NULL) {
+                        args->mKeys.SetKey ((eKeys)key, *keyString);
+                        delete keyString;
+                    }
+                    else {
+                        args->mKeys.SetKey((eKeys)key, entry.value);
+                    }
+                    break;
                 }
-                else {
-                    args->mKeys.SetKey((eKeys)key, entry.value);
-                }
-                break;
             }
         }
     }
 
     if (!found) {
-        throw InvalidKeywordException(entry.key, position, configFileContent);
+        throw InvalidKeywordException(entry.key, position, mConfigFileContent);
     }
 }
 
 string *cExternalplayerConfig::GetCodeSpecialKey(string name) {
-  if (name == "noKey") {
-    return new string("");
-  }
-  else if (name == "specialKeyUp") {
-    return new string("\e[A");
-  }
-  else if (name == "specialKeyDown") {
-    return new string("\e[B");
-  }
-  else if (name == "specialKeyRight") {
-    return new string("\e[C");
-  }
-  else if (name == "specialKeyLeft") {
-    return new string("\e[D");
-  }
-  else if (name == "specialKeyF1") {
-    return new string("\eOP");
-  }
-  else if (name == "specialKeyF2") {
-    return new string("\eOQ");
-  }
-  else if (name == "specialKeyF3") {
-    return new string("\eOR");
-  }
-  else if (name == "specialKeyF4") {
-    return new string("\eOS");
-  }
-  else if (name == "specialKeyF5") {
-    return new string("\e[15~");
-  }
-  else if (name == "specialKeyF6") {
-    return new string("\e[17~");
-  }
-  else if (name == "specialKeyF7") {
-    return new string("\e[18~");
-  }
-  else if (name == "specialKeyF8") {
-    return new string("\e[19~");
-  }
-  else if (name == "specialKeyF9") {
-    return new string("\e[20~");
-  }
-  else if (name == "specialKeyF10") {
-    return new string("\e[21~");
-  }
-  else if (name == "specialKeyF11") {
-    return new string("\e[23~");
-  }
-  else if (name == "specialKeyF12") {
-    return new string("\e[24~");
-  }
-  else if (name == "specialKeyIns") {
-    return new string("\e[2~");
-  }
-  else if (name == "specialKeyDel") {
-    return new string("\e[3~");
-  }
-  else if (name == "specialKeyHome") {
-    return new string("\e[H");
-  }
-  else if (name == "specialKeyEnd") {
-    return new string("\e[F");
-  }
-  else if (name == "specialKeyPageUp") {
-    return new string("\e[5~");
-  }
-  else if (name == "specialKeyPageDown") {
-    return new string("\e[6~");
-  }
-  else if (name == "specialKeySpace") {
-    return new string(" ");
-  }
-  else if (name == "specialKeyReturn") {
-    return new string("\n");
-  }
-  else {
-    return NULL;
-  }
+    if (name == "noKey") {
+        return new string("");
+    }
+    else if (name == "specialKeyUp") {
+        return new string("\e[A");
+    }
+    else if (name == "specialKeyDown") {
+        return new string("\e[B");
+    }
+    else if (name == "specialKeyRight") {
+        return new string("\e[C");
+    }
+    else if (name == "specialKeyLeft") {
+        return new string("\e[D");
+    }
+    else if (name == "specialKeyF1") {
+        return new string("\eOP");
+    }
+    else if (name == "specialKeyF2") {
+        return new string("\eOQ");
+    }
+    else if (name == "specialKeyF3") {
+        return new string("\eOR");
+    }
+    else if (name == "specialKeyF4") {
+        return new string("\eOS");
+    }
+    else if (name == "specialKeyF5") {
+        return new string("\e[15~");
+    }
+    else if (name == "specialKeyF6") {
+        return new string("\e[17~");
+    }
+    else if (name == "specialKeyF7") {
+        return new string("\e[18~");
+    }
+    else if (name == "specialKeyF8") {
+        return new string("\e[19~");
+    }
+    else if (name == "specialKeyF9") {
+        return new string("\e[20~");
+    }
+    else if (name == "specialKeyF10") {
+        return new string("\e[21~");
+    }
+    else if (name == "specialKeyF11") {
+        return new string("\e[23~");
+    }
+    else if (name == "specialKeyF12") {
+        return new string("\e[24~");
+    }
+    else if (name == "specialKeyIns") {
+        return new string("\e[2~");
+    }
+    else if (name == "specialKeyDel") {
+        return new string("\e[3~");
+    }
+    else if (name == "specialKeyHome") {
+        return new string("\e[H");
+    }
+    else if (name == "specialKeyEnd") {
+        return new string("\e[F");
+    }
+    else if (name == "specialKeyPageUp") {
+        return new string("\e[5~");
+    }
+    else if (name == "specialKeyPageDown") {
+        return new string("\e[6~");
+    }
+    else if (name == "specialKeySpace") {
+        return new string(" ");
+    }
+    else if (name == "specialKeyReturn") {
+        return new string("\n");
+    }
+    else {
+        return NULL;
+    }
 }
 
 unsigned int cExternalplayerConfig::GetLineNumberOfChar(unsigned int charNumber) {
-  unsigned int lineNumber = 0;
+    unsigned int lineNumber = 0;
 
-  for (unsigned int i = 0; i < charNumber; i++) {
-    if ((*configFileContent)[i] == '\n') {
-      lineNumber++;
+    for (unsigned int i = 0; i < charNumber; i++) {
+        if (mConfigFileContent[i] == '\n') {
+            lineNumber++;
+        }
     }
-  }
-
-  return lineNumber;
+    return lineNumber;
 }
 
 unsigned int cExternalplayerConfig::GetColumnNumberOfChar(unsigned int charNumber) {
-  unsigned int columnNumber = 1;
+    unsigned int columnNumber = 1;
 
-  for (unsigned int i = 0; i < charNumber; i++) {
-    if ((*configFileContent)[i] == '\n') {
-      columnNumber = 1;
+    for (unsigned int i = 0; i < charNumber; i++) {
+        if (mConfigFileContent[i] == '\n') {
+            columnNumber = 1;
+        }
+        else {
+            columnNumber++;
+        }
     }
-    else {
-      columnNumber++;
-    }
-  }
 
-  return columnNumber;
+    return columnNumber;
 }

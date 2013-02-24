@@ -31,10 +31,13 @@ cControlExternalplayer::cControlExternalplayer(sPlayerArgs * nConfig, int fdsPip
   config = nConfig;
   status = new cStatusExternalplayer(config);
   fdWritePipe = fdsPipe[1];
+  fdReadPipe = fdsPipe[0];
 }
 
 cControlExternalplayer::~cControlExternalplayer() {
   isyslog("externalplayer-plugin: shutting down player");
+  close (fdWritePipe);
+  close (fdReadPipe);
   delete player;
   delete status;
   player = NULL;

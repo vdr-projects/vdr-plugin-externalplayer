@@ -31,9 +31,10 @@ public:
 
 class cControlExternalplayer : public cControl {
 private:
-  sPlayerArgs * config;
-  cStatusExternalplayer * status;
+  sPlayerArgs *config;
+  cStatusExternalplayer *status;
   int fdWritePipe;
+  int fdReadPipe;
 public:
   cControlExternalplayer(sPlayerArgs * nConfig, int fdsPipe[2]);
   ~cControlExternalplayer();

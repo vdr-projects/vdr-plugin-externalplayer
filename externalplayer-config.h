@@ -24,6 +24,13 @@
 
 using namespace std;
 
+class StringTool {
+public:
+    static int strcasecmp (const string &s1, const string &s2) {
+        return (::strcasecmp (s1.c_str(), s2.c_str()) == 0);
+    }
+};
+
 class sKeymap {
 private:
     string mKeyMap[k_Setup+1];
@@ -61,55 +68,53 @@ public:
 
 class SyntaxErrorException {
 private:
-    int charNumber;
-    string * configFileContent;
+    int mCharNumber;
+    string mConfigFileContent;
 public:
-    SyntaxErrorException(int nCharNumber, string * nConfigFileContent);
+    SyntaxErrorException(int nCharNumber, const string &nConfigFileContent);
     int GetLineNumber(void);
     int GetColumnNumber(void);
 };
 
 class EntryMissingException {
 private:
-    string playerCommand;
-    string menuEntry;
-    int charNumber;
-    string * configFileContent;
+    string mPlayerCommand;
+    string mMenuEntry;
+    int mCharNumber;
+    string mConfigFileContent;
 public:
-    EntryMissingException(string nPlayerCommand, string nMenuEntry,
-                          int nCharNumber, string * nConfigFileContent);
+    EntryMissingException(const string &nPlayerCommand, const string &nMenuEntry,
+                          int nCharNumber, const string &nConfigFileContent);
     string GetPlayerCommand(void) {
-        return playerCommand;
+        return mPlayerCommand;
     }
     string GetMenuEntry(void) {
-        return menuEntry;
+        return mMenuEntry;
     }
     int GetLineNumber(void);
 };
 
 class InvalidKeywordException {
 private:
-    string keyword;
-    int charNumber;
-    string *configFileContent;
+    string mKeyword;
+    int mCharNumber;
+    string mConfigFileContent;
 public:
-    InvalidKeywordException(string nKeyword, int nCharNumber,
-                            string *nConfigFileContent);
-    string GetKeyword(void) {
-        return keyword;
-    }
+    InvalidKeywordException(const string &nKeyword, int nCharNumber,
+                            const string &nConfigFileContent);
+    string GetKeyword(void) {return mKeyword;}
     int GetLineNumber(void);
 };
 
 class cExternalplayerConfig {
 private:
-    string *configFileContent;
+    string mConfigFileContent;
     list<sPlayerArgs *> configuration;
-    string *ReadConfigFile(string filename);
+    string ReadConfigFile(const string &filename);
     list<sPlayerArgs *> ParseConfigFile(void);
     sPlayerArgs *GetConfiguration(unsigned int *position);
     sConfigEntry GetConfigEntry(unsigned int *position);
-    void RemoveUnnecessarySymbols(string *stringPtr);
+    void RemoveUnnecessarySymbols(string &stringPtr);
     void ProcessConfigEntry(sPlayerArgs *args, sConfigEntry entry,
                             int position);
     string *GetCodeSpecialKey(string name);

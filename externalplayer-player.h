@@ -16,17 +16,29 @@
 
 using namespace std;
 
+class cKillThread : public cThread {
+protected:
+    int pid;
+    void Action(void);
+    int Wait(int pid);
+public:
+    void KillProc (int npid);
+};
+
 class cPlayerExternalplayer : public cPlayer {
 private:
-  cRemotesDisable * remotesDisable;
-  sPlayerArgs * config;
-  int fdReadPipe;
+    cKillThread mKillThread;
+    cRemotesDisable *remotesDisable;
+    sPlayerArgs *config;
+    int fdReadPipe;
+    pid_t pid;
 protected:
-  void Activate(bool On);
+    void Activate(bool On);
+
 public:
-  cPlayerExternalplayer(ePlayMode playMode, sPlayerArgs * nConfig, int nFdReadPipe);
-  ~cPlayerExternalplayer();
-  bool isActive();
+    cPlayerExternalplayer(ePlayMode playMode, sPlayerArgs * nConfig, int nFdReadPipe);
+    ~cPlayerExternalplayer();
+    bool isActive();
 };
 
 #endif /*_EXTERNALPLAYER_PLAYER_H_*/
