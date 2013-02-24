@@ -22,7 +22,7 @@
 
 using namespace std;
 
-static const char *VERSION        = "0.2.0";
+static const char *VERSION        = "0.3.0";
 static const char *DESCRIPTION    = tr("launch external players");
 
 class cPluginExternalplayer : public cPlugin {

@@ -18,8 +18,6 @@
 
 #include "externalplayer-player.h"
 
-pid_t pid = 0;
-
 int cKillThread::Wait(int pid)
 {
     int stat_loc = 0;

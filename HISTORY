@@ -27,6 +27,9 @@ VDR Plugin 'externalplayer' Revision History
 - Moved old i18n support to new system
 - Adjust Makefile to new makefile system of VDR 1.7.35
 
-2013-02-03: Version 0.2.x
+2013-02-03: Version 0.3.0
 
-- Incorporate Makefilefix from Copperhead for VDR 1.7.36 
+- Incorporate Makefilefix from Copperhead for VDR 1.7.36.
+- Fix exec problem.
+- Fix process killing.
+- Make config file case insensitve.
