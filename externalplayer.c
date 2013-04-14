@@ -29,7 +29,7 @@ cPluginExternalplayer::~cPluginExternalplayer() {
   delete playerConfig;
 }
 
-void cPluginExternalplayer::StartPlayer(sPlayerArgs * config) {
+void cPluginExternalplayer::StartPlayer(sPlayerArgs *config) {
   isyslog("externalplayer-plugin: starting player: %s", config->mMenuEntry.c_str());
 
   int fdsPipe[2];
@@ -38,6 +38,7 @@ void cPluginExternalplayer::StartPlayer(sPlayerArgs * config) {
   }
 
   cControl::Launch(new cControlExternalplayer(config, fdsPipe));
+  cControl::Attach();
 }
 
 const char *cPluginExternalplayer::CommandLineHelp() {
@@ -121,31 +122,82 @@ bool cPluginExternalplayer::Service(const char *Id, void *Data) {
   return false;
 }
 
+const char **cPluginExternalplayer::SVDRPHelpPages(void)
+{
+    static const char *HelpPages[] = {
+            "EXEC: Execute first entry\n",
+            NULL
+    };
+    return HelpPages;
+}
+
+cString cPluginExternalplayer::SVDRPCommand(const char *Command, const char *Option,
+                                            int &ReplyCode)
+{
+    printf("Svdrp Com %s\n",Command);
+    if (strcasecmp(Command, "EXEC") != 0)  {
+        return NULL;
+    }
+    StartPlayer(playerConfig->GetConfiguration().front());
+    return "OK";
+}
+
 // --- cOsdExternalplayer ---------------------------------------------------
 
-cOsdExternalplayer::cOsdExternalplayer(cExternalplayerConfig * nPlayerConfig) : cOsdMenu(tr("External Players")) {
+cOsdExternalplayer::cOsdExternalplayer(cExternalplayerConfig * nPlayerConfig) :
+                                             cOsdMenu(tr("External Players")) {
+  int cnt = 1;
+  char num[4];
+  sPlayerArgs *nConf;
+  string menutxt;
   playerConfig = nPlayerConfig;
-  list<sPlayerArgs *> playerArgs = playerConfig->GetConfiguration();
-  for (list<sPlayerArgs *>::iterator i = playerArgs.begin(); i != playerArgs.end(); i++) {
-      Add(new cOsdItemExternalplayer(*i));
+  sPlayerArgsList playerArgs = playerConfig->GetConfiguration();
+  for (sPlayerArgsList::iterator i = playerArgs.begin(); i != playerArgs.end(); i++) {
+      nConf = *i;
+      if (cnt <= 9) {
+          sprintf(num,"%d ", cnt);
+      }
+      else {
+          strcpy (num, "  ");
+      }
+
+      menutxt = num + nConf->mMenuEntry;
+      Add(new cOsdItemExternalplayer(cnt, nPlayerConfig, menutxt.c_str()));
+      cnt++;
   }
 }
 
 cOsdExternalplayer::~cOsdExternalplayer() {
 }
 
-cOsdItemExternalplayer::cOsdItemExternalplayer(sPlayerArgs * nConfig) : cOsdItem(nConfig->mMenuEntry.c_str()) {
-  config = nConfig;
+cOsdItemExternalplayer::cOsdItemExternalplayer(int cnt,
+                                               cExternalplayerConfig *conf,
+                                               const char *menutxt) :
+                                                        cOsdItem(menutxt) {
+  mCnt = cnt;
+  mConfig = conf;
 }
 
 // --- cOsdItemExternalplayer -----------------------------------------------
 
 eOSState cOsdItemExternalplayer::ProcessKey(eKeys key) {
+  eOSState state = osUnknown;
+
   if (key == kOk) {
-    cPluginExternalplayer::StartPlayer(config);
+    cPluginExternalplayer::StartPlayer(mConfig->GetConfiguration(mCnt-1));
     return osEnd;
   }
-  return osUnknown;
+  if ((key > k0) && (key <= k9)) {
+      try
+      {
+          cPluginExternalplayer::StartPlayer(mConfig->GetConfiguration (key - k1));
+          state = osEnd;
+      }
+      catch (const std::out_of_range &oor)
+      {
+      }
+  }
+  return state;
 }
 
 VDRPLUGINCREATOR(cPluginExternalplayer);

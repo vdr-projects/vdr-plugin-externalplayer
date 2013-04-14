@@ -35,7 +35,7 @@ cControlExternalplayer::cControlExternalplayer(sPlayerArgs * nConfig, int fdsPip
 }
 
 cControlExternalplayer::~cControlExternalplayer() {
-  isyslog("externalplayer-plugin: shutting down player");
+  dsyslog("externalplayer-plugin: shutting down player");
   close (fdWritePipe);
   close (fdReadPipe);
   delete player;
@@ -45,6 +45,7 @@ cControlExternalplayer::~cControlExternalplayer() {
 
 eOSState cControlExternalplayer::ProcessKey(eKeys key) {
     if (!(((cPlayerExternalplayer *)player)->isActive())) {
+        isyslog("externalplayer-plugin: player not active");
         return osEnd;
     }
 

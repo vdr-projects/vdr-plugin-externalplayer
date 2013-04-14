@@ -14,7 +14,8 @@
 #define _EXTERNALPLAYER_CONFIG_H_
 
 #include <string>
-#include <list>
+#include <vector>
+#include <stdexcept>
 #include <fstream>
 #include <cstring>
 
@@ -50,6 +51,8 @@ struct sPlayerArgs {
     sKeymap mKeys;
     sPlayerArgs();
 };
+
+typedef vector<sPlayerArgs *> sPlayerArgsList;
 
 struct sConfigEntry {
     string key;
@@ -109,9 +112,9 @@ public:
 class cExternalplayerConfig {
 private:
     string mConfigFileContent;
-    list<sPlayerArgs *> configuration;
+    sPlayerArgsList configuration;
     string ReadConfigFile(const string &filename);
-    list<sPlayerArgs *> ParseConfigFile(void);
+    sPlayerArgsList ParseConfigFile(void);
     sPlayerArgs *GetConfiguration(unsigned int *position);
     sConfigEntry GetConfigEntry(unsigned int *position);
     void RemoveUnnecessarySymbols(string &stringPtr);
@@ -123,8 +126,11 @@ private:
 public:
     cExternalplayerConfig(string filename);
     ~cExternalplayerConfig();
-    list<sPlayerArgs *> GetConfiguration(void) {
+    sPlayerArgsList GetConfiguration(void) {
         return configuration;
+    }
+    sPlayerArgs *GetConfiguration(int cnt) throw (std::out_of_range) {
+        return (configuration.at(cnt));
     }
     int PlayerCount(void) {
         return configuration.size();

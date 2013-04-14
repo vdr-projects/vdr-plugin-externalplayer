@@ -33,3 +33,9 @@ VDR Plugin 'externalplayer' Revision History
 - Fix exec problem.
 - Fix process killing.
 - Make config file case insensitve.
+
+2013-04-14: Version 0.3.1
+
+- Bugfixes.
+- Menu can be selected via numeric keys if more than one entry exsist.
+- Basic SVDRP support.

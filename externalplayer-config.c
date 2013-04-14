@@ -151,8 +151,8 @@ string cExternalplayerConfig::ReadConfigFile(const string &filename) {
   return configFileContent;
 }
 
-list<sPlayerArgs *> cExternalplayerConfig::ParseConfigFile() {
-  list<sPlayerArgs *> configuration;
+sPlayerArgsList cExternalplayerConfig::ParseConfigFile() {
+  sPlayerArgsList configuration;
   sPlayerArgs * playerConfig = NULL;
 
   for (unsigned int i = 0; i < mConfigFileContent.size(); i++) {

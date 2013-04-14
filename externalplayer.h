@@ -22,7 +22,7 @@
 
 using namespace std;
 
-static const char *VERSION        = "0.3.0";
+static const char *VERSION        = "0.3.1";
 static const char *DESCRIPTION    = tr("launch external players");
 
 class cPluginExternalplayer : public cPlugin {
@@ -46,6 +46,8 @@ public:
   virtual bool SetupParse(const char * Name, const char * Value);
   virtual bool Service(const char * Id, void * Data = NULL);
   static void StartPlayer(sPlayerArgs * config);
+  virtual const char **SVDRPHelpPages(void);
+  virtual cString SVDRPCommand(const char *Command, const char *Option, int &ReplyCode);
 };
 
 class cOsdExternalplayer : public cOsdMenu {
@@ -58,9 +60,10 @@ public:
 
 class cOsdItemExternalplayer : public cOsdItem {
 private:
-  sPlayerArgs * config;
+    cExternalplayerConfig *mConfig;
+    int mCnt;
 public:
-  cOsdItemExternalplayer(sPlayerArgs * nConfig);
+  cOsdItemExternalplayer(int , cExternalplayerConfig *, const char *);
   ~cOsdItemExternalplayer() {}
   virtual eOSState ProcessKey(eKeys key);
 };

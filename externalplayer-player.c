@@ -40,6 +40,7 @@ void cKillThread::Action(void)
             return;
         }
         isyslog("externalplayer-plugin: player did not terminate properly. Killing process %i", pid);
+        Skins.QueueMessage(mtInfo, tr("player did not terminate properly"));
         kill(pid, SIGKILL);
         if (!Wait (pid)) {
             isyslog("externalplayer-plugin: player did not terminate properly. Can not killing process %i", pid);
@@ -82,8 +83,6 @@ void cPlayerExternalplayer::Activate(bool On) {
 
         int nPid = fork();
         if (nPid == 0) {
-
-
             isyslog("externalplayer-plugin: executing \"%s\"", config->mPlayerCommand.c_str());
             int MaxPossibleFileDescriptors = getdtablesize();
             for (int i = STDERR_FILENO + 1; i < MaxPossibleFileDescriptors; i++) {
@@ -113,7 +112,6 @@ void cPlayerExternalplayer::Activate(bool On) {
         if (remotesDisable != NULL) {
             remotesDisable->ReactivateRemotes();
         }
-
         if (pid != 0) {
             mKillThread.KillProc(pid);
         }
@@ -121,5 +119,15 @@ void cPlayerExternalplayer::Activate(bool On) {
 }
 
 bool cPlayerExternalplayer::isActive() {
-    return (waitpid(pid, NULL, WNOHANG) == 0);
+    int stat_loc = 0;
+
+    if (waitpid(pid, &stat_loc, WNOHANG) == 0) {
+        return true;
+    }
+    if (!WIFEXITED (stat_loc))
+    {
+        LOG_ERROR_STR("externalplayer-plugin: Child died unexpected\n");
+        Skins.QueueMessage(mtError, tr("Programm crashed"));
+    }
+    return false;
 }
