@@ -18,7 +18,7 @@ using namespace std;
 
 class cKillThread : public cThread {
 protected:
-    int pid;
+    int mPid;
     void Action(void);
     int Wait(int pid);
 public:
@@ -28,10 +28,10 @@ public:
 class cPlayerExternalplayer : public cPlayer {
 private:
     cKillThread mKillThread;
-    cRemotesDisable *remotesDisable;
-    sPlayerArgs *config;
+    cRemotesDisable *mRemotesDisable;
+    sPlayerArgs *mConfig;
     int fdReadPipe;
-    pid_t pid;
+    pid_t mPid;
 protected:
     void Activate(bool On);
 
@@ -39,6 +39,11 @@ public:
     cPlayerExternalplayer(ePlayMode playMode, sPlayerArgs * nConfig, int nFdReadPipe);
     ~cPlayerExternalplayer();
     bool isActive();
+    void Stop(void) {
+        if (mPid != 0) {
+            mKillThread.KillProc(mPid);
+        }
+    }
 };
 
 #endif /*_EXTERNALPLAYER_PLAYER_H_*/

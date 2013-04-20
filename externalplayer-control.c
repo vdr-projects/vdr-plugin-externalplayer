@@ -14,11 +14,11 @@
 #include "externalplayer-player.h"
 
 cStatusExternalplayer::cStatusExternalplayer(sPlayerArgs * nConfig) : cStatus() {
-  config = nConfig;
+  mConfig = nConfig;
 }
 
 void cStatusExternalplayer::OsdTitle(const char * title) {
-  if (config->mBlockMenu) {
+  if (mConfig->mBlockMenu) {
     cRemote::Put(kMenu);
     isyslog("externalplayer-plugin: menu blocked");
   }
@@ -28,8 +28,8 @@ void cStatusExternalplayer::OsdTitle(const char * title) {
 
 cControlExternalplayer::cControlExternalplayer(sPlayerArgs * nConfig, int fdsPipe[2])
     : cControl(player = new cPlayerExternalplayer(nConfig->mPlayMode, nConfig, fdsPipe[0])) {
-  config = nConfig;
-  status = new cStatusExternalplayer(config);
+  mConfig = nConfig;
+  mStatus = new cStatusExternalplayer(mConfig);
   fdWritePipe = fdsPipe[1];
   fdReadPipe = fdsPipe[0];
 }
@@ -39,7 +39,7 @@ cControlExternalplayer::~cControlExternalplayer() {
   close (fdWritePipe);
   close (fdReadPipe);
   delete player;
-  delete status;
+  delete mStatus;
   player = NULL;
 }
 
@@ -49,8 +49,8 @@ eOSState cControlExternalplayer::ProcessKey(eKeys key) {
         return osEnd;
     }
 
-    if (config->mSlaveMode) {
-        string keyval = config->mKeys.GetKey (key);
+    if (mConfig->mSlaveMode) {
+        string keyval = mConfig->mKeys.GetKey (key);
         if (!keyval.empty()) {
             write(fdWritePipe, keyval.c_str(), keyval.size());
         }

@@ -21,23 +21,26 @@
 #include "externalplayer-remotes.h"
 
 cPluginExternalplayer::cPluginExternalplayer() {
-  playerConfig = NULL;
-  configFilename = "";
+  mControl = NULL;
+  mPlayerConfig = NULL;
+  mConfigFilename = "";
 }
 
 cPluginExternalplayer::~cPluginExternalplayer() {
-  delete playerConfig;
+  delete mPlayerConfig;
 }
 
 void cPluginExternalplayer::StartPlayer(sPlayerArgs *config) {
-  isyslog("externalplayer-plugin: starting player: %s", config->mMenuEntry.c_str());
+  isyslog("externalplayer-plugin: starting player: %s",
+          config->mMenuEntry.c_str());
 
   int fdsPipe[2];
   if (config->mSlaveMode) {
     pipe(fdsPipe);
   }
 
-  cControl::Launch(new cControlExternalplayer(config, fdsPipe));
+  mControl = new cControlExternalplayer(config, fdsPipe);
+  cControl::Launch(mControl);
   cControl::Attach();
 }
 
@@ -54,7 +57,7 @@ bool cPluginExternalplayer::ProcessArgs(int argc, char *argv[]) {
   int c;
   while ((c = getopt_long(argc, argv, "C:", long_options, NULL)) != -1) {
     switch (c) {
-      case 'C': configFilename = optarg;
+      case 'C': mConfigFilename = optarg;
                 break;
       default:  return false;
     }
@@ -67,29 +70,32 @@ bool cPluginExternalplayer::Initialize() {
 }
 
 bool cPluginExternalplayer::Start() {
-  if (configFilename == "") {
-    configFilename += ConfigDirectory();
-    configFilename += "/externalplayer.conf";
+  if (mConfigFilename == "") {
+    mConfigFilename += ConfigDirectory();
+    mConfigFilename += "/externalplayer.conf";
   }
 
-  playerConfig = new cExternalplayerConfig(configFilename);
+  mPlayerConfig = new cExternalplayerConfig(mConfigFilename);
 
   return true;
 }
 
 void cPluginExternalplayer::Stop() {
+    if (mControl != NULL) {
+        mControl->Stop();
+    }
 }
 
 void cPluginExternalplayer::Housekeeping() {
 }
 
 const char * cPluginExternalplayer::MainMenuEntry() {
-  int count = playerConfig->PlayerCount();
+  int count = mPlayerConfig->PlayerCount();
   if (count == 0) {
     return NULL;
   }
   else if (count == 1) {
-    return playerConfig->GetConfiguration().front()->mMenuEntry.c_str();
+    return mPlayerConfig->GetConfiguration().front()->mMenuEntry.c_str();
   }
   else {
     return tr("External Players");
@@ -97,16 +103,16 @@ const char * cPluginExternalplayer::MainMenuEntry() {
 }
 
 cOsdObject * cPluginExternalplayer::MainMenuAction() {
-  int count = playerConfig->PlayerCount();
+  int count = mPlayerConfig->PlayerCount();
   if (count == 0) {
     return NULL;
   }
   else if (count == 1) {
-    StartPlayer(playerConfig->GetConfiguration().front());
+    StartPlayer(mPlayerConfig->GetConfiguration().front());
     return NULL;
   }
   else {
-    return new cOsdExternalplayer(playerConfig);
+    return new cOsdExternalplayer(this);
   }
 }
 
@@ -125,7 +131,7 @@ bool cPluginExternalplayer::Service(const char *Id, void *Data) {
 const char **cPluginExternalplayer::SVDRPHelpPages(void)
 {
     static const char *HelpPages[] = {
-            "EXEC: Execute first entry\n",
+            "EXEC <no: Execute entry no <no>\n",
             NULL
     };
     return HelpPages;
@@ -142,7 +148,7 @@ cString cPluginExternalplayer::SVDRPCommand(const char *Command, const char *Opt
         return NULL;
     }
     if ((Option == NULL) || (Option[0] == '\0')) {
-        config = playerConfig->GetConfiguration().front();
+        config = mPlayerConfig->GetConfiguration().front();
     }
     else {
         errno = 0;
@@ -154,7 +160,7 @@ cString cPluginExternalplayer::SVDRPCommand(const char *Command, const char *Opt
             return cString::sprintf("Invalid number \"%s\"", Option);
         }
         try {
-            config = playerConfig->GetConfiguration (opt);
+            config = mPlayerConfig->GetConfiguration (opt);
         }
         catch (const std::out_of_range &oor)
         {
@@ -168,14 +174,15 @@ cString cPluginExternalplayer::SVDRPCommand(const char *Command, const char *Opt
 
 // --- cOsdExternalplayer ---------------------------------------------------
 
-cOsdExternalplayer::cOsdExternalplayer(cExternalplayerConfig * nPlayerConfig) :
+cOsdExternalplayer::cOsdExternalplayer(cPluginExternalplayer *plugin) :
                                              cOsdMenu(tr("External Players")) {
+  cExternalplayerConfig *playerconfig;
   int cnt = 1;
   char num[4];
   sPlayerArgs *nConf;
   string menutxt;
-  playerConfig = nPlayerConfig;
-  sPlayerArgsList playerArgs = playerConfig->GetConfiguration();
+  playerconfig = plugin->GetConfig();
+  sPlayerArgsList playerArgs = playerconfig->GetConfiguration();
   for (sPlayerArgsList::iterator i = playerArgs.begin(); i != playerArgs.end(); i++) {
       nConf = *i;
       if (cnt <= 9) {
@@ -186,7 +193,7 @@ cOsdExternalplayer::cOsdExternalplayer(cExternalplayerConfig * nPlayerConfig) :
       }
 
       menutxt = num + nConf->mMenuEntry;
-      Add(new cOsdItemExternalplayer(cnt, nPlayerConfig, menutxt.c_str()));
+      Add(new cOsdItemExternalplayer(cnt, plugin, menutxt.c_str()));
       cnt++;
   }
 }
@@ -195,26 +202,27 @@ cOsdExternalplayer::~cOsdExternalplayer() {
 }
 
 cOsdItemExternalplayer::cOsdItemExternalplayer(int cnt,
-                                               cExternalplayerConfig *conf,
+                                               cPluginExternalplayer *plugin,
                                                const char *menutxt) :
                                                         cOsdItem(menutxt) {
   mCnt = cnt;
-  mConfig = conf;
+  mPlugin = plugin;
 }
 
 // --- cOsdItemExternalplayer -----------------------------------------------
 
 eOSState cOsdItemExternalplayer::ProcessKey(eKeys key) {
   eOSState state = osUnknown;
+  cExternalplayerConfig *playerconfig = mPlugin->GetConfig();
 
   if (key == kOk) {
-    cPluginExternalplayer::StartPlayer(mConfig->GetConfiguration(mCnt-1));
+      mPlugin->StartPlayer(playerconfig->GetConfiguration(mCnt-1));
     return osEnd;
   }
   if ((key > k0) && (key <= k9)) {
       try
       {
-          cPluginExternalplayer::StartPlayer(mConfig->GetConfiguration (key - k1));
+          mPlugin->StartPlayer(playerconfig->GetConfiguration(key - k1));
           state = osEnd;
       }
       catch (const std::out_of_range &oor)

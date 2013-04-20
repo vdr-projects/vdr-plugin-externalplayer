@@ -19,16 +19,17 @@
 #include <vdr/menu.h>
 
 #include "externalplayer-config.h"
-
+#include "externalplayer-control.h"
 using namespace std;
 
-static const char *VERSION        = "0.3.1";
+static const char *VERSION        = "0.3.2";
 static const char *DESCRIPTION    = tr("launch external players");
 
 class cPluginExternalplayer : public cPlugin {
 private:
-  string configFilename;
-  cExternalplayerConfig * playerConfig;
+  string mConfigFilename;
+  cExternalplayerConfig * mPlayerConfig;
+  cControlExternalplayer *mControl;
 public:
   cPluginExternalplayer();
   virtual ~cPluginExternalplayer();
@@ -45,25 +46,26 @@ public:
   virtual cMenuSetupPage * SetupMenu();
   virtual bool SetupParse(const char * Name, const char * Value);
   virtual bool Service(const char * Id, void * Data = NULL);
-  static void StartPlayer(sPlayerArgs * config);
+  void StartPlayer(sPlayerArgs * config);
   virtual const char **SVDRPHelpPages(void);
   virtual cString SVDRPCommand(const char *Command, const char *Option, int &ReplyCode);
+  cExternalplayerConfig *GetConfig(void) { return mPlayerConfig; };
 };
 
 class cOsdExternalplayer : public cOsdMenu {
 private:
-  cExternalplayerConfig * playerConfig;
+
 public:
-  cOsdExternalplayer(cExternalplayerConfig * nPlayerConfig);
+  cOsdExternalplayer(cPluginExternalplayer *plugin);
   ~cOsdExternalplayer();
 };
 
 class cOsdItemExternalplayer : public cOsdItem {
 private:
-    cExternalplayerConfig *mConfig;
+    cPluginExternalplayer *mPlugin;
     int mCnt;
 public:
-  cOsdItemExternalplayer(int cnt, cExternalplayerConfig *conf, const char *menutxt);
+  cOsdItemExternalplayer(int cnt, cPluginExternalplayer *plug, const char *menutxt);
   ~cOsdItemExternalplayer() {}
   virtual eOSState ProcessKey(eKeys key);
 };

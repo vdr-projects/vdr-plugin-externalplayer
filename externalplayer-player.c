@@ -34,51 +34,52 @@ int cKillThread::Wait(int pid)
 
 void cKillThread::Action(void)
 {
-    if (kill(pid, 0) == 0) {
-        kill(pid, SIGTERM);
-        if (Wait (pid)) {
+    if (kill(mPid, 0) == 0) {
+        kill(mPid, SIGTERM);
+        if (Wait (mPid)) {
             return;
         }
-        isyslog("externalplayer-plugin: player did not terminate properly. Killing process %i", pid);
+        isyslog("externalplayer-plugin: player did not terminate properly. Killing process %i", mPid);
         Skins.QueueMessage(mtInfo, tr("player did not terminate properly"));
-        kill(pid, SIGKILL);
-        if (!Wait (pid)) {
-            isyslog("externalplayer-plugin: player did not terminate properly. Can not killing process %i", pid);
+        kill(mPid, SIGKILL);
+        if (!Wait (mPid)) {
+            isyslog("externalplayer-plugin: player did not terminate properly. Can not killing process %i", mPid);
         }
     }
 }
 
 void cKillThread::KillProc(int npid)
 {
-    pid = npid;
-    SetDescription ("KillThread pid %d", pid);
+    mPid = npid;
+    SetDescription ("KillThread pid %d", mPid);
     Start();
 }
 
 cPlayerExternalplayer::cPlayerExternalplayer(ePlayMode playMode, sPlayerArgs * nConfig, int nFdReadPipe)
                                               : cPlayer(playMode) {
-    config = nConfig;
+    mConfig = nConfig;
 
     fdReadPipe = nFdReadPipe;
 
-    if (config->mDeactivateRemotes) {
-        remotesDisable = new cRemotesDisable();
+    if (mConfig->mDeactivateRemotes) {
+        mRemotesDisable = new cRemotesDisable();
     }
     else {
-        remotesDisable = NULL;
+        mRemotesDisable = NULL;
     }
-    pid = 0;
+    mPid = 0;
 }
 
 cPlayerExternalplayer::~cPlayerExternalplayer() {
+
     Activate(false);
-    delete remotesDisable;
+    delete mRemotesDisable;
 }
 
 void cPlayerExternalplayer::Activate(bool On) {
     if (On) {
-        if (remotesDisable != NULL) {
-            remotesDisable->DeactivateRemotes();
+        if (mRemotesDisable != NULL) {
+            mRemotesDisable->DeactivateRemotes();
         }
 
         int nPid = fork();
@@ -88,38 +89,41 @@ void cPlayerExternalplayer::Activate(bool On) {
             if (sid < 0) {
                 isyslog("externalplayer-plugin: can not create new session");
             }
-            if (config->mSlaveMode) {
+            if (mConfig->mSlaveMode) {
                 dup2(fdReadPipe, STDIN_FILENO);
             }
-            if (execl("/bin/sh", "sh", "-c", config->mPlayerCommand.c_str(), NULL) == -1) {
-                LOG_ERROR_STR(config->mPlayerCommand.c_str());
+            if (execl("/bin/sh", "sh", "-c", mConfig->mPlayerCommand.c_str(), NULL) == -1) {
+                LOG_ERROR_STR(mConfig->mPlayerCommand.c_str());
                 exit(-1);
             }
             isyslog("externalplayer-plugin: SystemExec failed");
             exit(0);
         }
         else {
-            pid = nPid;
+            mPid = nPid;
             isyslog("externalplayer-plugin: PID of child process: %i executing \"%s\"",
-                    pid, config->mPlayerCommand.c_str());
+                    mPid, mConfig->mPlayerCommand.c_str());
         }
     }
     else {
-        if (remotesDisable != NULL) {
-            remotesDisable->ReactivateRemotes();
+        if (mRemotesDisable != NULL) {
+            mRemotesDisable->ReactivateRemotes();
         }
-        if (pid != 0) {
-            mKillThread.KillProc(pid);
+        if (mPid != 0) {
+            mKillThread.KillProc(mPid);
         }
     }
 }
 
 bool cPlayerExternalplayer::isActive() {
     int stat_loc = 0;
-
-    if (waitpid(pid, &stat_loc, WNOHANG) == 0) {
+    if (mPid == 0) {
+        return false;
+    }
+    if (waitpid(mPid, &stat_loc, WNOHANG) == 0) {
         return true;
     }
+    mPid = 0;
     if (!WIFEXITED (stat_loc))
     {
         LOG_ERROR_STR("externalplayer-plugin: Child died unexpected\n");

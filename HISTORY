@@ -39,3 +39,8 @@ VDR Plugin 'externalplayer' Revision History
 - Bugfixes.
 - Menu can be selected via numeric keys if more than one entry exsist.
 - Basic SVDRP support.
+
+2013-04-xx: Version 0.3.2
+- SVDRP EXEC command can execute a specific entry.
+- Remove filedescriptor cleanup after fork, this can cause crashes.
+- Kill a runnning player on VDR shutdown.

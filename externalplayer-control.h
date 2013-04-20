@@ -22,7 +22,7 @@ using namespace std;
 
 class cStatusExternalplayer : public cStatus {
 private:
-  sPlayerArgs * config;
+  sPlayerArgs *mConfig;
 public:
   cStatusExternalplayer(sPlayerArgs * nConfig);
   ~cStatusExternalplayer() {}
@@ -31,8 +31,8 @@ public:
 
 class cControlExternalplayer : public cControl {
 private:
-  sPlayerArgs *config;
-  cStatusExternalplayer *status;
+  sPlayerArgs *mConfig;
+  cStatusExternalplayer *mStatus;
   int fdWritePipe;
   int fdReadPipe;
 public:
@@ -40,6 +40,10 @@ public:
   ~cControlExternalplayer();
   void Hide() {}
   eOSState ProcessKey(eKeys key);
+  void Stop(void) {
+      cPlayerExternalplayer *pl = (cPlayerExternalplayer *)player;
+      pl->Stop();
+  }
 };
 
 #endif /*_EXTERNALPLAYER_CONTROL_H_*/
