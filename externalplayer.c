@@ -134,11 +134,35 @@ const char **cPluginExternalplayer::SVDRPHelpPages(void)
 cString cPluginExternalplayer::SVDRPCommand(const char *Command, const char *Option,
                                             int &ReplyCode)
 {
-    printf("Svdrp Com %s\n",Command);
-    if (strcasecmp(Command, "EXEC") != 0)  {
+    sPlayerArgs *config = NULL;
+    char *endptr = NULL;
+    long opt = 0;
+
+    if (strcasecmp(Command, "EXEC") != 0) {
         return NULL;
     }
-    StartPlayer(playerConfig->GetConfiguration().front());
+    if ((Option == NULL) || (Option[0] == '\0')) {
+        config = playerConfig->GetConfiguration().front();
+    }
+    else {
+        errno = 0;
+        opt = strtol (Option, &endptr, 10);
+        if (((errno == ERANGE) && ((opt == LONG_MAX) || (opt == LONG_MIN))) ||
+             ((errno != 0) && (opt == 0)) ||
+             (Option == endptr))  {
+            ReplyCode = 504;
+            return cString::sprintf("Invalid number \"%s\"", Option);
+        }
+        try {
+            config = playerConfig->GetConfiguration (opt);
+        }
+        catch (const std::out_of_range &oor)
+        {
+            ReplyCode = 504;
+            return cString::sprintf("Configuration %ld not available", opt);
+        }
+    }
+    StartPlayer(config);
     return "OK";
 }
 

@@ -83,11 +83,6 @@ void cPlayerExternalplayer::Activate(bool On) {
 
         int nPid = fork();
         if (nPid == 0) {
-            isyslog("externalplayer-plugin: executing \"%s\"", config->mPlayerCommand.c_str());
-            int MaxPossibleFileDescriptors = getdtablesize();
-            for (int i = STDERR_FILENO + 1; i < MaxPossibleFileDescriptors; i++) {
-                close(i); //close all dup'ed filedescriptors
-            }
             // Start a new session
             pid_t sid = setsid();
             if (sid < 0) {
@@ -105,7 +100,8 @@ void cPlayerExternalplayer::Activate(bool On) {
         }
         else {
             pid = nPid;
-            isyslog("externalplayer-plugin: PID of child process: %i", pid);
+            isyslog("externalplayer-plugin: PID of child process: %i executing \"%s\"",
+                    pid, config->mPlayerCommand.c_str());
         }
     }
     else {

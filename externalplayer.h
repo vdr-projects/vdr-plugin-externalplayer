@@ -63,7 +63,7 @@ private:
     cExternalplayerConfig *mConfig;
     int mCnt;
 public:
-  cOsdItemExternalplayer(int , cExternalplayerConfig *, const char *);
+  cOsdItemExternalplayer(int cnt, cExternalplayerConfig *conf, const char *menutxt);
   ~cOsdItemExternalplayer() {}
   virtual eOSState ProcessKey(eKeys key);
 };
