@@ -1,4 +1,4 @@
-VDR Plugin 'externalplayer' Revision History
+﻿VDR Plugin 'externalplayer' Revision History
 --------------------------------------------
 
 2005-09-26: Version 0.0.1
@@ -12,9 +12,9 @@ VDR Plugin 'externalplayer' Revision History
   externalplayer-player.c/.h to externalplayer-control.c/.h and
   externalplayer-remotes.c/.h.
 - Changed way to shut down player.
-- Rewrode of cRemotesDisable class. No need to know lirc/rcu device
+- Reworde of cRemotesDisable class. No need to know lirc/rcu device
   names any more.
-- Added configuartion file support (new files externalplayer-remotes.c/.h).
+- Added configuration file support (new files externalplayer-remotes.c/.h).
 - Created example configuration.
 - Changed MainMenuAction if more than one playe exists in configuration.
   (new classes cOsdExternalplayer and cOsdItemExternalplayer in
@@ -29,10 +29,10 @@ VDR Plugin 'externalplayer' Revision History
 
 2013-02-03: Version 0.3.0
 
-- Incorporate Makefilefix from Copperhead for VDR 1.7.36.
+- Incorporate Makefile fix from Copperhead for VDR 1.7.36.
 - Fix exec problem.
 - Fix process killing.
-- Make config file case insensitve.
+- Make config file case insensitive.
 
 2013-04-14: Version 0.3.1
 
@@ -40,7 +40,8 @@ VDR Plugin 'externalplayer' Revision History
 - Menu can be selected via numeric keys if more than one entry exsist.
 - Basic SVDRP support.
 
-2013-04-xx: Version 0.3.2
+2013-04-21: Version 0.3.2
 - SVDRP EXEC command can execute a specific entry.
+- New SVDRP LIST command to display available configurations.
 - Remove filedescriptor cleanup after fork, this can cause crashes.
-- Kill a runnning player on VDR shutdown.
+- Kill a running program when VDR is shutdown.

@@ -131,7 +131,8 @@ bool cPluginExternalplayer::Service(const char *Id, void *Data) {
 const char **cPluginExternalplayer::SVDRPHelpPages(void)
 {
     static const char *HelpPages[] = {
-            "EXEC <no: Execute entry no <no>\n",
+            "LIST: List available configurations\n",
+            "EXEC <no>: Execute entry no <no>\n",
             NULL
     };
     return HelpPages;
@@ -144,32 +145,49 @@ cString cPluginExternalplayer::SVDRPCommand(const char *Command, const char *Opt
     char *endptr = NULL;
     long opt = 0;
 
-    if (strcasecmp(Command, "EXEC") != 0) {
-        return NULL;
-    }
-    if ((Option == NULL) || (Option[0] == '\0')) {
-        config = mPlayerConfig->GetConfiguration().front();
-    }
-    else {
-        errno = 0;
-        opt = strtol (Option, &endptr, 10);
-        if (((errno == ERANGE) && ((opt == LONG_MAX) || (opt == LONG_MIN))) ||
-             ((errno != 0) && (opt == 0)) ||
-             (Option == endptr))  {
-            ReplyCode = 504;
-            return cString::sprintf("Invalid number \"%s\"", Option);
+    if (strcasecmp(Command, "EXEC") == 0) {
+        if ((Option == NULL) || (Option[0] == '\0')) {
+            config = mPlayerConfig->GetConfiguration().front();
         }
-        try {
-            config = mPlayerConfig->GetConfiguration (opt);
+        else {
+            errno = 0;
+            opt = strtol (Option, &endptr, 10);
+            if (((errno == ERANGE) && ((opt == LONG_MAX) || (opt == LONG_MIN))) ||
+                    ((errno != 0) && (opt == 0)) ||
+                    (Option == endptr))  {
+                ReplyCode = 504;
+                return cString::sprintf("Invalid number \"%s\"", Option);
+            }
+            try {
+                config = mPlayerConfig->GetConfiguration (opt);
+            }
+            catch (const std::out_of_range &oor)
+            {
+                ReplyCode = 504;
+                return cString::sprintf("Configuration %ld not available", opt);
+            }
         }
-        catch (const std::out_of_range &oor)
-        {
-            ReplyCode = 504;
-            return cString::sprintf("Configuration %ld not available", opt);
-        }
+        StartPlayer(config);
+        return "OK";
     }
-    StartPlayer(config);
-    return "OK";
+    else if (strcasecmp(Command, "LIST") == 0) {
+        int cnt = 1;
+        string ret = "";
+        char buf[10];
+        sPlayerArgs *nConf;
+        sPlayerArgsList playerArgs = mPlayerConfig->GetConfiguration();
+        for (sPlayerArgsList::iterator i = playerArgs.begin(); i != playerArgs.end(); i++) {
+            nConf = *i;
+            sprintf(buf,"%3d ", cnt);
+            if (cnt > 1) {
+                ret += "\n";
+            }
+            ret += buf + nConf->mMenuEntry;
+            cnt++;
+        }
+        return cString(ret.c_str());
+    }
+    return NULL;
 }
 
 // --- cOsdExternalplayer ---------------------------------------------------
