@@ -45,3 +45,4 @@
 - New SVDRP LIST command to display available configurations.
 - Remove filedescriptor cleanup after fork, this can cause crashes.
 - Kill a running program when VDR is shutdown.
+- Allow TAB in config file.
