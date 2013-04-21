@@ -118,7 +118,7 @@ cExternalplayerConfig::cExternalplayerConfig(string filename) {
   }
   catch (FileNotFoundException &fnfEx) {
     mConfigFileContent.clear();
-    isyslog("externalplayer-plugin: Configuration file \"%s\" not found!\n", fnfEx.GetFilename().c_str());
+    esyslog("externalplayer-plugin: Configuration file \"%s\" not found!\n", fnfEx.GetFilename().c_str());
   }
 }
 
@@ -158,6 +158,7 @@ sPlayerArgsList cExternalplayerConfig::ParseConfigFile() {
   for (unsigned int i = 0; i < mConfigFileContent.size(); i++) {
     switch (mConfigFileContent[i]) {
       case ' ':
+      case '\t':
       case '\n':
         break;
       case '#':
@@ -174,11 +175,11 @@ sPlayerArgsList cExternalplayerConfig::ParseConfigFile() {
         }
         catch (EntryMissingException &emEx) {
           if (emEx.GetMenuEntry() == "") {
-            isyslog("externalplayer-plugin: error in config file: \"MenuEntry\" missing or invalid, line %i",
+            esyslog("externalplayer-plugin: error in config file: \"MenuEntry\" missing or invalid, line %i",
                     emEx.GetLineNumber());
           }
           if (emEx.GetPlayerCommand() == "") {
-            isyslog("externalplayer-plugin: error in config file: \"Command\" missing or invalid, line %i!\n",
+            esyslog("externalplayer-plugin: error in config file: \"Command\" missing or invalid, line %i!\n",
                     emEx.GetLineNumber());
           }
         }
@@ -189,7 +190,7 @@ sPlayerArgsList cExternalplayerConfig::ParseConfigFile() {
           i++;
         }
         i++;
-        isyslog("externalplayer-plugin: syntax error in config file: line %i, column %i! Ignoring rest of this line.",
+        esyslog("externalplayer-plugin: syntax error in config file: line %i, column %i! Ignoring rest of this line.",
                 GetLineNumberOfChar(errorPosition), GetColumnNumberOfChar(errorPosition));
         break;
     }
@@ -205,6 +206,7 @@ sPlayerArgs * cExternalplayerConfig::GetConfiguration(unsigned int * position) {
   while (mConfigFileContent[*position] != '}' && !endOfFile) {
     switch (mConfigFileContent[*position]) {
       case ' ':
+      case '\t':
       case '\n':
         (*position)++;
         break;
@@ -349,11 +351,11 @@ sConfigEntry cExternalplayerConfig::GetConfigEntry(unsigned int * position)
 }
 
 void cExternalplayerConfig::RemoveUnnecessarySymbols(string &stringPtr) {
-  while (stringPtr[0] == ' ') {
+  while ((stringPtr[0] == ' ') || (stringPtr[0] == '\t')){
     stringPtr.erase(stringPtr.begin());
   }
 
-  while (stringPtr[stringPtr.size() - 1] == ' ') {
+  while ((stringPtr[stringPtr.size() - 1] == ' ') || (stringPtr[stringPtr.size() - 1] == '\t')){
     stringPtr.erase((stringPtr.end() - 1), (stringPtr.end()));
   }
 }

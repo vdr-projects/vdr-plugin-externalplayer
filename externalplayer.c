@@ -185,6 +185,10 @@ cString cPluginExternalplayer::SVDRPCommand(const char *Command, const char *Opt
             ret += buf + nConf->mMenuEntry;
             cnt++;
         }
+        if (ret.empty()) {
+            ReplyCode = 504;
+            return "No config available";
+        }
         return cString(ret.c_str());
     }
     return NULL;

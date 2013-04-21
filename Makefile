@@ -118,5 +118,5 @@ dist: clean
 	@echo Distribution package created as $(PACKAGE).tgz
 
 clean:
-	@-rm -f $(PODIR)/*.mo $(PODIR)/*.pot
+	@-rm -f $(PODIR)/*.mo $(PODIR)/*.pot $(PODIR)/*.orig
 	@-rm -f $(OBJS) $(DEPFILE) *.so *.tgz core* *~
