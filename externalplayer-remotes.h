@@ -20,17 +20,17 @@ using namespace std;
 
 class cRemotesDisable {
 private:
-    bool deactivated;
+	bool deactivated;
 public:
-    void DeactivateRemotes(void);
-    void ReactivateRemotes(void);
+	void DeactivateRemotes(void);
+	void ReactivateRemotes(void);
 };
 
 class cRemotesDisableHelper: public cRemote, public cThread {
 public:
-    cRemotesDisableHelper(const char * name);
-    void Deactivate(void);
-    void Reactivate(void);
+	cRemotesDisableHelper(const char * name);
+	void Deactivate(void);
+	void Reactivate(void);
 };
 
 #endif /*_EXTERNALPLAYER_REMOTES_H_*/

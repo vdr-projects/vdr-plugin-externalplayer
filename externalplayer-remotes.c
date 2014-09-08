@@ -15,35 +15,35 @@
 #include "externalplayer-remotes.h"
 
 void cRemotesDisable::DeactivateRemotes() {
-  if (!deactivated) {
-    isyslog("externalplayer-plugin: deactivating remotes");
-    for (cRemote * i = Remotes.First(); i != NULL; i = Remotes.Next(i)) {
-      if (strcmp(i->Name(), "LIRC") == 0) {
-        ((cRemotesDisableHelper *) i)->Deactivate();
-      }
-      else if (strcmp(i->Name(), "RCU") == 0) {
-        ((cRemotesDisableHelper *) i)->Deactivate();
-      }
-    }
-  }
+	if (!deactivated) {
+		isyslog("externalplayer-plugin: deactivating remotes");
+		for (cRemote * i = Remotes.First(); i != NULL; i = Remotes.Next(i)) {
+			if (strcmp(i->Name(), "LIRC") == 0) {
+				((cRemotesDisableHelper *) i)->Deactivate();
+			}
+			else if (strcmp(i->Name(), "RCU") == 0) {
+				((cRemotesDisableHelper *) i)->Deactivate();
+			}
+		}
+	}
 
-  deactivated = true;
+	deactivated = true;
 }
 
 void cRemotesDisable::ReactivateRemotes() {
-  if (deactivated) {
-    isyslog("externalplayer-plugin: reactivating remotes");
-    for (cRemote * i = Remotes.First(); i != NULL; i = Remotes.Next(i)) {
-      if (strcmp(i->Name(), "LIRC") == 0) {
-        ((cRemotesDisableHelper *) i)->Reactivate();
-      }
-      else if (strcmp(i->Name(), "RCU") == 0) {
-        ((cRemotesDisableHelper *) i)->Reactivate();
-      }
-    }
-  }
+	if (deactivated) {
+		isyslog("externalplayer-plugin: reactivating remotes");
+		for (cRemote * i = Remotes.First(); i != NULL; i = Remotes.Next(i)) {
+			if (strcmp(i->Name(), "LIRC") == 0) {
+				((cRemotesDisableHelper *) i)->Reactivate();
+			}
+			else if (strcmp(i->Name(), "RCU") == 0) {
+				((cRemotesDisableHelper *) i)->Reactivate();
+			}
+		}
+	}
 
-  deactivated = false;
+	deactivated = false;
 }
 
 // --- cRemotesDisableHelper -------------------------------------------------
@@ -52,13 +52,13 @@ cRemotesDisableHelper::cRemotesDisableHelper(const char * name) : cRemote(name) 
 }
 
 void cRemotesDisableHelper::Deactivate() {
-  if (Active()) {
-    Cancel();
-  }
+	if (Active()) {
+		Cancel();
+	}
 }
 
 void cRemotesDisableHelper::Reactivate() {
-  if (!Active()) {
-    Start();
-  }
+	if (!Active()) {
+		Start();
+	}
 }

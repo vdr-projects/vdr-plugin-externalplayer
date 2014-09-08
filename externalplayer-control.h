@@ -19,20 +19,20 @@
 #include "externalplayer-player.h"
 
 using namespace std;
-
+/*
 class cStatusExternalplayer : public cStatus {
 private:
   sPlayerArgs *mConfig;
 public:
-  cStatusExternalplayer(sPlayerArgs * nConfig);
+  cStatusExternalplayer(sPlayerArgs *nConfig);
   ~cStatusExternalplayer() {}
-  void OsdTitle(const char * title);
+  void OsdTitle(const char *title);
 };
-
+*/
 class cControlExternalplayer : public cControl {
 private:
   sPlayerArgs *mConfig;
-  cStatusExternalplayer *mStatus;
+ // cStatusExternalplayer *mStatus;
   int fdWritePipe;
   int fdReadPipe;
 public:

@@ -35,6 +35,8 @@ void cPluginExternalplayer::StartPlayer(sPlayerArgs *config) {
           config->mMenuEntry.c_str());
 
   int fdsPipe[2];
+  fdsPipe[0] = -1;
+  fdsPipe[1] = -1;
   if (config->mSlaveMode) {
     pipe(fdsPipe);
   }
