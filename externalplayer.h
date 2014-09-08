@@ -22,7 +22,7 @@
 #include "externalplayer-control.h"
 using namespace std;
 
-static const char *VERSION        = "0.3.2";
+static const char *VERSION        = "0.3.3";
 static const char *DESCRIPTION    = tr("launch external players");
 
 class cPluginExternalplayer : public cPlugin {

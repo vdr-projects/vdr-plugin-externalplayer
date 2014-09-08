@@ -73,7 +73,9 @@ cPlayerExternalplayer::cPlayerExternalplayer(ePlayMode playMode, sPlayerArgs * n
 cPlayerExternalplayer::~cPlayerExternalplayer() {
 
     Activate(false);
-    delete mRemotesDisable;
+    if (mRemotesDisable != NULL) {
+	    delete mRemotesDisable;
+    }
 }
 
 void cPlayerExternalplayer::Activate(bool On) {
