@@ -131,9 +131,11 @@ cExternalplayerConfig::~cExternalplayerConfig() {
 
 string cExternalplayerConfig::ReadConfigFile(const string &filename) {
 	ifstream playerConfigStream;
-	playerConfigStream.open(filename.c_str(), ios::in);
 
-	if (playerConfigStream == NULL) {
+	try {
+		playerConfigStream.open(filename.c_str(), ios::in);
+	}
+	catch (ifstream::failure e) {
 		throw FileNotFoundException(filename);
 	}
 
